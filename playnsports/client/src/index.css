@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --shimmer-color: #111 0%, #16a34a 50%, #111 100%;
+    --glass-02: rgba(0,0,0,0.02);
+    --glass-04: rgba(0,0,0,0.04);
+    --glass-05: rgba(0,0,0,0.05);
+    --glass-06: rgba(0,0,0,0.06);
+    --glass-08: rgba(0,0,0,0.08);
+    --glass-10: rgba(0,0,0,0.10);
+    --glass-20: rgba(0,0,0,0.20);
+    --glass-30: rgba(0,0,0,0.30);
+    --text-main: #111827;
+    --text-muted: #4b5563;
+    --bg-surface: #ffffff;
+  }
+
+  .dark {
+    --shimmer-color: #fff 0%, #4ade80 50%, #fff 100%;
+    --glass-02: rgba(255,255,255,0.02);
+    --glass-04: rgba(255,255,255,0.04);
+    --glass-05: rgba(255,255,255,0.05);
+    --glass-06: rgba(255,255,255,0.06);
+    --glass-08: rgba(255,255,255,0.08);
+    --glass-10: rgba(255,255,255,0.10);
+    --glass-20: rgba(255,255,255,0.20);
+    --glass-30: rgba(255,255,255,0.30);
+    --text-main: #ffffff;
+    --text-muted: rgba(255,255,255,0.6);
+    --bg-surface: #111111;
+  }
+}

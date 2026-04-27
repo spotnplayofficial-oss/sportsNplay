@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment
+.env
+*/.env
+
+# Build
+client/dist/
+client/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+playnsports/dump
+
+
+# fix ->
+# otp fix (full fix)
+# user name (signup)
+# phone num (nm)
+# confirm pass
+# fix navigation from sign in to home
+# ground owner -> comming soon 
+# reduandant user creation in group
+
+
+#fix2 ->
+# coach login dashboard

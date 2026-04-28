@@ -5,6 +5,9 @@ import {
   getAllPlayers,
   getMyProfile,
   deleteAvailability,
+  updatePlayerProfile,
+  addCertificate,
+  removeCertificate,
 } from '../controllers/playerController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -16,5 +19,10 @@ router.get('/nearby', protect, getNearbyPlayers);
 router.get('/all', protect, getAllPlayers);
 router.get('/me', protect, authorizeRoles('player'), getMyProfile);
 router.patch('/offline', protect, authorizeRoles('player'), deleteAvailability);
+
+// ── extended profile ──
+router.patch('/profile', protect, authorizeRoles('player'), updatePlayerProfile);
+router.post('/certificates', protect, authorizeRoles('player'), addCertificate);
+router.delete('/certificates/:certId', protect, authorizeRoles('player'), removeCertificate);
 
 export default router;

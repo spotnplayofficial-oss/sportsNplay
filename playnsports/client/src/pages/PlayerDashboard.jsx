@@ -504,7 +504,7 @@ const PlayerDashboard = () => {
                 </form>
               </div>
 
-              <div className="glass-card animate-cardIn">
+              {/* <div className="glass-card animate-cardIn">
                 <h3 className="font-bebas text-xl tracking-wide text-gray-900 dark:text-white mb-4">QUICK LINKS</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -519,7 +519,7 @@ const PlayerDashboard = () => {
                     </Link>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </div>
           )}
 

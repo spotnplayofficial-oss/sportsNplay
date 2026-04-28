@@ -1,347 +1,1226 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 import Navbar from '../components/Navbar';
 
-const ProfilePage = () => {
-  const { user, updateUser } = useAuth();
-  const [preview, setPreview] = useState(user?.avatar || null);
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+/* ─────────────────────────────────────────────
+   Constants
+───────────────────────────────────────────── */
+const SPORTS = [
+  { value: 'football',     label: '⚽ Football' },
+  { value: 'cricket',      label: '🏏 Cricket' },
+  { value: 'basketball',   label: '🏀 Basketball' },
+  { value: 'tennis',       label: '🎾 Tennis' },
+  { value: 'badminton',    label: '🏸 Badminton' },
+  { value: 'volleyball',   label: '🏐 Volleyball' },
+  { value: 'boxing',       label: '🥊 Boxing' },
+  { value: 'box cricket',  label: '🏏 Box Cricket' },
+  { value: 'box football', label: '⚽ Box Football' },
+];
+
+const LEVELS = ['beginner', 'intermediate', 'advanced'];
+const LEVEL_COLOR = {
+  beginner:     'bg-yellow-400/10 text-yellow-400 border-yellow-400/20',
+  intermediate: 'bg-blue-400/10 text-blue-400 border-blue-400/20',
+  advanced:     'bg-green-400/10 text-green-400 border-green-400/20',
+};
+
+const SPORT_EMOJI = { football: '⚽', cricket: '🏏', basketball: '🏀', tennis: '🎾', badminton: '🏸', volleyball: '🏐', boxing: '🥊', 'box cricket': '🏏', 'box football': '⚽' };
+
+const TABS_PLAYER = [
+  { id: 'basic',    label: '👤 Basic Info' },
+  { id: 'sports',   label: '🏆 Sports Profile' },
+  { id: 'certs',    label: '📜 Certificates' },
+];
+
+const TABS_COACH = [
+  { id: 'basic',    label: '👤 Basic Info' },
+  { id: 'coaching', label: '🎓 Coaching Profile' },
+  { id: 'certs',    label: '📜 Certificates' },
+];
+
+const TABS_OTHER = [
+  { id: 'basic',    label: '👤 Basic Info' },
+];
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* ─────────────────────────────────────────────
+   Custom Date Picker Component
+───────────────────────────────────────────── */
+const DatePicker = ({ value, onChange, placeholder = 'Select date' }) => {
+  const [open, setOpen] = useState(false);
+  const [viewYear, setViewYear] = useState(null);
+  const [viewMonth, setViewMonth] = useState(null);
+  const [mode, setMode] = useState('day'); // 'day' | 'month' | 'year'
+  const ref = useRef();
+
+  const parsed = value ? new Date(value) : null;
 
   useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-      .font-bebas { font-family: 'Bebas Neue', cursive !important; }
+    const now = parsed || new Date(2000, 0, 1);
+    setViewYear(now.getFullYear());
+    setViewMonth(now.getMonth());
+  }, [value]);
 
-      @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-8px); }
-      }
-      @keyframes spin-slow {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      @keyframes ping-slow {
-        0% { transform: scale(1); opacity: 0.6; }
-        100% { transform: scale(2); opacity: 0; }
-      }
-      @keyframes shimmer {
-        from { background-position: -200% center; }
-        to { background-position: 200% center; }
-      }
-      @keyframes gradientBorder {
-        0%, 100% { border-color: rgba(74,222,128,0.4); }
-        50% { border-color: rgba(74,222,128,0.8); }
-      }
-      @keyframes blob {
-        0% { transform: translate(0px, 0px) scale(1); }
-        33% { transform: translate(30px, -50px) scale(1.1); }
-        66% { transform: translate(-20px, 20px) scale(0.9); }
-        100% { transform: translate(0px, 0px) scale(1); }
-      }
-      .animate-blob { animation: blob 7s infinite; }
-
-      .animate-fadeUp-1 { animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s forwards; opacity: 0; }
-      .animate-fadeUp-2 { animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards; opacity: 0; }
-      .animate-fadeUp-3 { animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s forwards; opacity: 0; }
-      .animate-fadeUp-4 { animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.4s forwards; opacity: 0; }
-      .animate-float { animation: float 4s ease-in-out infinite; }
-      .animate-spin-slow { animation: spin-slow 12s linear infinite; }
-      .animate-ping-slow { animation: ping-slow 2s ease-out infinite; }
-
-      .shimmer-text {
-        background: linear-gradient(90deg, var(--shimmer-color));
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shimmer 3s linear infinite;
-      }
-
-      .avatar-ring {
-        animation: gradientBorder 3s ease-in-out infinite;
-      }
-
-      .grid-dots {
-        background-image: radial-gradient(circle, var(--glass-05, rgba(255,255,255,0.05)) 1px, transparent 1px);
-        background-size: 28px 28px;
-      }
-
-      .noise {
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      }
-
-      .info-card {
-        background: var(--glass-02, rgba(255,255,255,0.02));
-        backdrop-filter: blur(10px);
-        border: 1px solid var(--glass-05, rgba(255,255,255,0.05));
-        border-radius: 20px;
-        padding: 18px 20px;
-        transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-        position: relative;
-        overflow: hidden;
-      }
-      .info-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 100%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-        transition: left 0.5s ease;
-      }
-      .info-card:hover::before { left: 100%; }
-      .info-card:hover {
-        background: var(--glass-04, rgba(255,255,255,0.04));
-        border-color: rgba(74,222,128,0.3);
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 10px 30px -10px rgba(74,222,128,0.15);
-      }
-
-      .upload-zone {
-        border: 2px dashed rgba(74,222,128,0.3);
-        background: rgba(74,222,128,0.02);
-        backdrop-filter: blur(8px);
-        border-radius: 20px;
-        transition: all 0.4s ease;
-      }
-      .upload-zone:hover {
-        border-color: rgba(74,222,128,0.6);
-        background: rgba(74,222,128,0.06);
-        transform: scale(1.02);
-        box-shadow: 0 0 30px rgba(74,222,128,0.15);
-      }
-
-      .save-btn {
-        background: linear-gradient(135deg, #4ade80, #22c55e);
-        color: black;
-        font-weight: 700;
-        border-radius: 14px;
-        padding: 14px;
-        width: 100%;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-      }
-      .save-btn::before {
-        content: '';
-        position: absolute;
-        top: 0; left: -100%;
-        width: 100%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        transition: left 0.5s ease;
-      }
-      .save-btn:hover::before { left: 100%; }
-      .save-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(74,222,128,0.3); }
-      .save-btn:disabled { opacity: 0.5; transform: none; }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-    if (selected) {
-      setFile(selected);
-      setPreview(URL.createObjectURL(selected));
-    }
+  const displayValue = parsed
+    ? `${parsed.getDate()} ${MONTHS[parsed.getMonth()]} ${parsed.getFullYear()}`
+    : '';
+
+  const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+  const getFirstDay = (y, m) => new Date(y, m, 1).getDay(); // 0=Sun
+
+  const handleDayClick = (day) => {
+    const d = new Date(viewYear, viewMonth, day);
+    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    onChange(iso);
+    setOpen(false);
   };
 
-  const handleUpload = async () => {
-    if (!file) return;
-    setLoading(true);
-    setMessage('');
-    setError('');
-    try {
-      const formData = new FormData();
-      formData.append('avatar', file);
-      const { data } = await API.post('/upload/avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      updateUser({ avatar: data.avatar });
-      setMessage('Profile photo updated ✅');
-      setFile(null);
-    } catch {
-      setError('Upload failed ❌');
-    } finally {
-      setLoading(false);
-    }
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
   };
 
-  const getRoleBadge = () => {
-    if (user?.role === 'player') return { label: 'Player', emoji: '⚽', color: 'text-green-400 bg-green-400/10 border-green-400/20' };
-    return { label: 'Ground Owner', emoji: '🏟️', color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' };
+  const yearRange = () => {
+    const base = Math.floor(viewYear / 12) * 12;
+    return Array.from({ length: 12 }, (_, i) => base + i);
   };
 
-  const badge = getRoleBadge();
+  const days = getDaysInMonth(viewYear, viewMonth);
+  const firstDay = getFirstDay(viewYear, viewMonth);
+  const blanks = Array(firstDay).fill(null);
+  const dayNums = Array.from({ length: days }, (_, i) => i + 1);
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] dark:bg-[#060606] text-gray-900 dark:text-white relative overflow-hidden" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      <div className="fixed inset-0 grid-dots pointer-events-none opacity-20" />
-      <div className="fixed inset-0 noise pointer-events-none opacity-50" />
-      
-      {/* Background Orbs */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-green-500/20 rounded-full blur-[100px] animate-blob" />
-        <div className="absolute top-[20%] right-[-10%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] bg-blue-500/10 rounded-full blur-[100px] animate-blob" style={{ animationDelay: '2s', animationDuration: '8s' }} />
-        <div className="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-emerald-500/10 rounded-full blur-[100px] animate-blob" style={{ animationDelay: '4s', animationDuration: '10s' }} />
-      </div>
-      
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none opacity-30 z-0">
-        <div className="absolute inset-0 rounded-full border-[1px] border-dashed border-green-400/20 animate-spin-slow" />
-        <div className="absolute inset-16 rounded-full border-[1px] border-green-400/10" style={{ animation: 'spin-slow 25s linear infinite reverse' }} />
-      </div>
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setMode('day'); }}
+        className="input-field"
+        style={{ textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+      >
+        <span style={{ color: displayValue ? 'inherit' : '#4b5563' }}>{displayValue || placeholder}</span>
+        <span style={{ fontSize: '14px', opacity: 0.6 }}>📅</span>
+      </button>
 
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[1px] bg-gradient-to-r from-transparent via-green-400/50 to-transparent pointer-events-none z-10" />
+      {open && viewYear !== null && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 999,
+          background: '#0d1117', border: '1px solid rgba(74,222,128,0.2)',
+          borderRadius: '16px', padding: '16px', width: '280px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+          animation: 'fadeUp 0.2s ease forwards',
+        }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            {mode === 'day' && (
+              <button type="button" onClick={prevMonth} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#9ca3af', width: 28, height: 28, borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>‹</button>
+            )}
+            {mode !== 'day' && <div style={{ width: 28 }} />}
+
+            <div style={{ display: 'flex', gap: 6 }}>
+              {mode === 'day' && (
+                <>
+                  <button type="button" onClick={() => setMode('month')}
+                    style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)', color: '#4ade80', borderRadius: 8, padding: '3px 10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    {MONTHS[viewMonth].slice(0,3)}
+                  </button>
+                  <button type="button" onClick={() => setMode('year')}
+                    style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)', color: '#4ade80', borderRadius: 8, padding: '3px 10px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    {viewYear}
+                  </button>
+                </>
+              )}
+              {mode === 'month' && (
+                <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 14 }}>Select Month</span>
+              )}
+              {mode === 'year' && (
+                <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: 14 }}>Select Year</span>
+              )}
+            </div>
+
+            {mode === 'day' && (
+              <button type="button" onClick={nextMonth} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#9ca3af', width: 28, height: 28, borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>›</button>
+            )}
+            {mode !== 'day' && (
+              <button type="button" onClick={() => setMode('day')} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#9ca3af', width: 28, height: 28, borderRadius: 8, cursor: 'pointer', fontSize: 12 }}>✕</button>
+            )}
+          </div>
+
+          {/* Day view */}
+          {mode === 'day' && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 6 }}>
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                  <div key={d} style={{ textAlign: 'center', fontSize: 10, color: '#6b7280', padding: '4px 0', fontWeight: 600 }}>{d}</div>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
+                {blanks.map((_, i) => <div key={`b${i}`} />)}
+                {dayNums.map(d => {
+                  const isSelected = parsed && parsed.getDate() === d && parsed.getMonth() === viewMonth && parsed.getFullYear() === viewYear;
+                  const isToday = new Date().getDate() === d && new Date().getMonth() === viewMonth && new Date().getFullYear() === viewYear;
+                  return (
+                    <button key={d} type="button" onClick={() => handleDayClick(d)}
+                      style={{
+                        width: '100%', aspectRatio: '1', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: isSelected ? 700 : 400,
+                        background: isSelected ? '#4ade80' : isToday ? 'rgba(74,222,128,0.1)' : 'transparent',
+                        color: isSelected ? '#000' : isToday ? '#4ade80' : '#d1d5db',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={e => { if (!isSelected) e.target.style.background = 'rgba(74,222,128,0.12)'; }}
+                      onMouseLeave={e => { if (!isSelected) e.target.style.background = isToday ? 'rgba(74,222,128,0.1)' : 'transparent'; }}
+                    >{d}</button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Month view */}
+          {mode === 'month' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+              {MONTHS.map((m, i) => {
+                const isSel = i === viewMonth;
+                return (
+                  <button key={m} type="button" onClick={() => { setViewMonth(i); setMode('day'); }}
+                    style={{
+                      padding: '8px 4px', borderRadius: 10, border: isSel ? '1px solid rgba(74,222,128,0.4)' : '1px solid transparent',
+                      background: isSel ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: isSel ? '#4ade80' : '#d1d5db', fontSize: 12, fontWeight: isSel ? 700 : 400, cursor: 'pointer',
+                    }}>
+                    {m.slice(0,3)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Year view */}
+          {mode === 'year' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <button type="button" onClick={() => setViewYear(y => y - 12)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#9ca3af', padding: '4px 10px', borderRadius: 8, cursor: 'pointer' }}>‹‹</button>
+                <button type="button" onClick={() => setViewYear(y => y + 12)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#9ca3af', padding: '4px 10px', borderRadius: 8, cursor: 'pointer' }}>››</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+                {yearRange().map(y => {
+                  const isSel = y === viewYear;
+                  return (
+                    <button key={y} type="button" onClick={() => { setViewYear(y); setMode('day'); }}
+                      style={{
+                        padding: '8px 4px', borderRadius: 10, border: isSel ? '1px solid rgba(74,222,128,0.4)' : '1px solid transparent',
+                        background: isSel ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.03)',
+                        color: isSel ? '#4ade80' : '#d1d5db', fontSize: 12, fontWeight: isSel ? 700 : 400, cursor: 'pointer',
+                      }}>
+                      {y}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   Delete Confirm Popup
+───────────────────────────────────────────── */
+const DeleteConfirm = ({ sport, onConfirm, onCancel }) => (
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 1000,
+    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    animation: 'fadeUp 0.2s ease forwards',
+  }}>
+    <div style={{
+      background: '#0d1117', border: '1px solid rgba(239,68,68,0.25)',
+      borderRadius: 20, padding: 28, maxWidth: 360, width: '90%',
+      boxShadow: '0 25px 80px rgba(0,0,0,0.8)',
+      animation: 'cardIn 0.25s ease forwards',
+    }}>
+      <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 12 }}>⚠️</div>
+      <h3 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 16, textAlign: 'center', marginBottom: 8 }}>Remove Sport?</h3>
+      <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', marginBottom: 22, lineHeight: 1.5 }}>
+        Are you sure you want to remove <strong style={{ color: '#f1f5f9' }}>{SPORT_EMOJI[sport?.name]} {sport?.name}</strong> from your profile?
+      </p>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button onClick={onCancel}
+          style={{ flex: 1, padding: '10px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#9ca3af', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+          Cancel
+        </button>
+        <button onClick={onConfirm}
+          style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#ef4444,#dc2626)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          Yes, Remove
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────
+   Height converter helpers
+───────────────────────────────────────────── */
+const cmToFtIn = (cm) => {
+  const totalInches = cm / 2.54;
+  const ft = Math.floor(totalInches / 12);
+  const inch = Math.round(totalInches % 12);
+  return { ft, inch };
+};
+const ftInToCm = (ft, inch) => Math.round((ft * 12 + inch) * 2.54);
+
+/* ─────────────────────────────────────────────
+   Main Component
+───────────────────────────────────────────── */
+const ProfilePage = () => {
+  const { user, updateUser } = useAuth();
+  const role = user?.role;
+
+  const TABS = role === 'player' ? TABS_PLAYER : role === 'coach' ? TABS_COACH : TABS_OTHER;
+
+  /* ── state ── */
+  const [activeTab,   setActiveTab]   = useState('basic');
+  const [message,     setMessage]     = useState('');
+  const [msgType,     setMsgType]     = useState('success');
+  const [loading,     setLoading]     = useState(false);
+  const [avatarFile,  setAvatarFile]  = useState(null);
+  const [avatarPrev,  setAvatarPrev]  = useState(user?.avatar || null);
+
+  /* ── basic info form ── */
+  const [basicForm, setBasicForm] = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+    gender: user?.gender || '',
+    dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.split('T')[0] : '',
+    city: user?.city || '',
+    state: user?.state || '',
+    country: user?.country || 'India',
+    bio: user?.bio || '',
+  });
+
+  /* ── player profile ── */
+  const [playerData, setPlayerData] = useState(null);
+  const [sportsArr, setSportsArr] = useState([]);
+  const [heightCm, setHeightCm] = useState('');
+  const [heightFt, setHeightFt] = useState('');
+  const [heightIn, setHeightIn] = useState('');
+  const [weight, setWeight] = useState('');
+  const [achievements, setAchievements] = useState([]);
+  const [newAchievement, setNewAchievement] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [twitter, setTwitter] = useState('');
+
+  /* ── add sport form ── */
+  const [addSportForm, setAddSportForm] = useState({ name: 'cricket', level: 'beginner' });
+  const [deletingIdx, setDeletingIdx] = useState(null); // index of sport to confirm delete
+
+  /* ── coach profile ── */
+  const [coachData, setCoachData] = useState(null);
+  const [coachForm, setCoachForm] = useState({});
+
+  /* ── certificates ── */
+  const [certs, setCerts] = useState([]);
+  const [certTitle, setCertTitle] = useState('');
+  const [certFile, setCertFile] = useState(null);
+  const [certLoading, setCertLoading] = useState(false);
+  const certInputRef = useRef();
+
+  /* ─────────────────────────────────────────────
+     Load data
+  ───────────────────────────────────────────── */
+  useEffect(() => {
+    if (role === 'player') fetchPlayerProfile();
+    if (role === 'coach')  fetchCoachProfile();
+  }, [role]);
+
+  const fetchPlayerProfile = async () => {
+    try {
+      const { data } = await API.get('/players/me');
+      if (data) {
+        setPlayerData(data);
+        setSportsArr(data.sports || []);
+        const cm = data.height || '';
+        setHeightCm(cm);
+        if (cm) {
+          const { ft, inch } = cmToFtIn(Number(cm));
+          setHeightFt(ft);
+          setHeightIn(inch);
+        }
+        setWeight(data.weight || '');
+        setAchievements(data.achievements || []);
+        setInstagram(data.instagram || '');
+        setTwitter(data.twitter || '');
+        setCerts(data.certificates || []);
+        if (data.user) {
+          setBasicForm(prev => ({
+            ...prev,
+            name: data.user.name || prev.name,
+            phone: data.user.phone || prev.phone,
+            city: data.user.city || prev.city,
+            state: data.user.state || prev.state,
+            bio: data.user.bio || prev.bio,
+            gender: data.user.gender || prev.gender,
+            dateOfBirth: data.user.dateOfBirth ? data.user.dateOfBirth.split('T')[0] : prev.dateOfBirth,
+            country: data.user.country || prev.country,
+          }));
+        }
+      }
+    } catch {}
+  };
+
+  const fetchCoachProfile = async () => {
+    try {
+      const { data } = await API.get('/coaches/my');
+      if (data) {
+        setCoachData(data);
+        setCoachForm({
+          fullName: data.fullName || '',
+          phone: data.phone || '',
+          gender: data.gender || '',
+          dateOfBirth: data.dateOfBirth ? data.dateOfBirth.split('T')[0] : '',
+          city: data.city || '',
+          state: data.state || '',
+          bio: data.bio || '',
+          certifications: data.certifications || '',
+          hourlyRate: data.hourlyRate || '',
+          experience: data.experience || '',
+          coachingLevel: data.coachingLevel || '',
+        });
+      }
+    } catch {}
+  };
+
+  /* ─────────────────────────────────────────────
+     Helpers
+  ───────────────────────────────────────────── */
+  const flash = (msg, type = 'success') => {
+    setMessage(msg); setMsgType(type);
+    setTimeout(() => setMessage(''), 3500);
+  };
+
+  /* ─────────────────────────────────────────────
+     Height sync handlers
+  ───────────────────────────────────────────── */
+  const handleCmChange = (val) => {
+    setHeightCm(val);
+    if (val && !isNaN(val)) {
+      const { ft, inch } = cmToFtIn(Number(val));
+      setHeightFt(ft);
+      setHeightIn(inch);
+    }
+  };
+
+  const handleFtInChange = (ft, inch) => {
+    setHeightFt(ft);
+    setHeightIn(inch);
+    const cm = ftInToCm(Number(ft) || 0, Number(inch) || 0);
+    if (cm > 0) setHeightCm(cm);
+  };
+
+  /* ─────────────────────────────────────────────
+     Handlers
+  ───────────────────────────────────────────── */
+
+  // Avatar
+  const handleAvatarChange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setAvatarFile(f);
+    setAvatarPrev(URL.createObjectURL(f));
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('avatar', avatarFile);
+      const { data } = await API.post('/upload/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      updateUser({ avatar: data.avatar });
+      setAvatarFile(null);
+      flash('Avatar updated ✅');
+    } catch { flash('Upload failed', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  // Basic Info
+  const handleBasicSave = async () => {
+    setLoading(true);
+    try {
+      if (role === 'player') {
+        await API.patch('/players/profile', basicForm);
+      } else {
+        await API.patch('/users/profile', basicForm);
+      }
+      updateUser({ ...basicForm });
+      flash('Profile updated ✅');
+    } catch { flash('Failed to save', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  // Sports — Add from form
+  const handleAddSport = () => {
+    const already = sportsArr.find(s => s.name === addSportForm.name);
+    if (already) { flash('This sport is already added', 'error'); return; }
+    setSportsArr(prev => [...prev, { name: addSportForm.name, level: addSportForm.level, yearsPlayed: 0 }]);
+    // reset to next available
+    const taken = [...sportsArr.map(s => s.name), addSportForm.name];
+    const next = SPORTS.find(s => !taken.includes(s.value));
+    setAddSportForm({ name: next?.value || 'football', level: 'beginner' });
+  };
+
+  // Sports — confirm delete flow
+  const confirmRemoveSport = (idx) => setDeletingIdx(idx);
+  const doRemoveSport = () => {
+    setSportsArr(prev => prev.filter((_, i) => i !== deletingIdx));
+    setDeletingIdx(null);
+  };
+  const cancelRemoveSport = () => setDeletingIdx(null);
+
+  const handleSportsSave = async () => {
+    setLoading(true);
+    try {
+      await API.patch('/players/profile', {
+        sports: sportsArr,
+        height: heightCm || null,
+        weight: weight || null,
+        achievements,
+        instagram,
+        twitter,
+      });
+      flash('Sports profile saved ✅');
+    } catch { flash('Failed to save', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  // Achievements
+  const addAchievement = () => {
+    if (!newAchievement.trim()) return;
+    setAchievements(prev => [...prev, newAchievement.trim()]);
+    setNewAchievement('');
+  };
+
+  // Certificate upload
+  const handleCertUpload = async () => {
+    if (!certTitle.trim() || !certFile) { flash('Add title and select a file', 'error'); return; }
+    setCertLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('certificate', certFile);
+      const { data: uploadData } = await API.post('/upload/certificate', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const { data } = await API.post('/players/certificates', { title: certTitle.trim(), fileUrl: uploadData.fileUrl });
+      setCerts(data);
+      setCertTitle('');
+      setCertFile(null);
+      if (certInputRef.current) certInputRef.current.value = '';
+      flash('Certificate added ✅');
+    } catch { flash('Upload failed', 'error'); }
+    finally { setCertLoading(false); }
+  };
+
+  const handleCertDelete = async (certId) => {
+    try {
+      const { data } = await API.delete(`/players/certificates/${certId}`);
+      setCerts(data);
+      flash('Certificate removed');
+    } catch { flash('Failed', 'error'); }
+  };
+
+  // Coach profile update
+  const handleCoachSave = async () => {
+    setLoading(true);
+    try {
+      await API.patch('/coaches/profile', coachForm);
+      flash('Coach profile updated ✅');
+    } catch { flash('Failed to save', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  /* ─────────────────────────────────────────────
+     Render helpers
+  ───────────────────────────────────────────── */
+  const completionPct = () => {
+    const fields = [basicForm.name, basicForm.phone, basicForm.gender, basicForm.city, basicForm.bio, avatarPrev];
+    if (role === 'player') {
+      fields.push(...sportsArr.map(s => s.name));
+      fields.push(heightCm, weight);
+    }
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
+  };
+
+  const pct = completionPct();
+
+  /* ─────────────────────────────────────────────
+     JSX
+  ───────────────────────────────────────────── */
+  return (
+    <div className="min-h-screen bg-[#fcfcfc] dark:bg-[#060606] text-gray-900 dark:text-white" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        .font-bebas { font-family: 'Bebas Neue', cursive !important; }
+
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes shimmer { from{background-position:-200% center} to{background-position:200% center} }
+        @keyframes blob { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-50px) scale(1.1)} 66%{transform:translate(-20px,20px) scale(0.9)} 100%{transform:translate(0,0) scale(1)} }
+        @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes ping { 0%{transform:scale(1);opacity:1} 100%{transform:scale(2);opacity:0} }
+        @keyframes cardIn { from{opacity:0;transform:translateY(14px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        .anim-1 { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.05s forwards; opacity:0; }
+        .anim-2 { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s forwards; opacity:0; }
+        .anim-3 { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.25s forwards; opacity:0; }
+        .anim-cardIn { animation: cardIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards; opacity:0; }
+        .animate-blob { animation: blob 7s infinite; }
+        .animate-spin-slow { animation: spin-slow 14s linear infinite; }
+        .animate-ping { animation: ping 1.5s ease-out infinite; }
+
+        .shimmer-text {
+          background: linear-gradient(90deg,#4ade80,#22c55e,#86efac,#4ade80);
+          background-size:200% auto;
+          -webkit-background-clip:text;
+          -webkit-text-fill-color:transparent;
+          animation: shimmer 3s linear infinite;
+        }
+        .grid-dots {
+          background-image: radial-gradient(circle,rgba(255,255,255,0.04) 1px,transparent 1px);
+          background-size: 28px 28px;
+        }
+
+        .tab-btn {
+          padding: 9px 18px;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 600;
+          transition: all 0.25s;
+          white-space: nowrap;
+          font-family: 'DM Sans', sans-serif;
+          border: 1px solid transparent;
+        }
+        .tab-active { background:rgba(74,222,128,0.12); color:#4ade80; border-color:rgba(74,222,128,0.22); }
+        .tab-inactive { color:#6b7280; }
+        .tab-inactive:hover { color:#9ca3af; border-color:rgba(255,255,255,0.08); }
+
+        .field-group { display:flex; flex-direction:column; gap:6px; }
+        .field-label { font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.08em; }
+
+        .input-field {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 11px 14px;
+          color: inherit;
+          font-size: 14px;
+          outline: none;
+          transition: all 0.2s;
+          font-family: 'DM Sans', sans-serif;
+          width: 100%;
+        }
+        .input-field:focus { border-color:rgba(74,222,128,0.4); background:rgba(74,222,128,0.03); box-shadow:0 0 0 3px rgba(74,222,128,0.06); }
+        .input-field::placeholder { color:#4b5563; }
+        .input-field option { background:#111; }
+
+        .card {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          padding: 22px;
+        }
+
+        .btn-primary {
+          background: linear-gradient(135deg,#4ade80,#22c55e);
+          color: black;
+          font-weight: 700;
+          border-radius: 12px;
+          padding: 11px 24px;
+          font-size: 14px;
+          transition: all 0.3s;
+          position: relative;
+          overflow: hidden;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .btn-primary::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent); transition:left 0.4s; }
+        .btn-primary:hover::before { left:100%; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(74,222,128,0.3); }
+        .btn-primary:disabled { opacity:0.5; transform:none; box-shadow:none; }
+
+        .btn-danger {
+          background: rgba(239,68,68,0.08);
+          border: 1px solid rgba(239,68,68,0.15);
+          color: #f87171;
+          font-size: 12px;
+          font-weight: 600;
+          border-radius: 8px;
+          padding: 5px 10px;
+          transition: all 0.2s;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .btn-danger:hover { background:rgba(239,68,68,0.15); }
+
+        .sport-card {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 16px;
+          padding: 14px 16px;
+          transition: all 0.25s;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .sport-card:hover { border-color:rgba(74,222,128,0.2); background: rgba(74,222,128,0.02); }
+
+        .badge {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 10px;
+          border-radius: 100px;
+          border: 1px solid;
+        }
+
+        .cert-card {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 14px;
+          padding: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          transition: border-color 0.2s;
+        }
+        .cert-card:hover { border-color:rgba(74,222,128,0.2); }
+
+        .upload-zone {
+          border: 2px dashed rgba(74,222,128,0.25);
+          background: rgba(74,222,128,0.02);
+          border-radius: 16px;
+          transition: all 0.3s;
+        }
+        .upload-zone:hover { border-color:rgba(74,222,128,0.5); background:rgba(74,222,128,0.05); }
+
+        .progress-bar-track {
+          height: 6px;
+          background: rgba(255,255,255,0.06);
+          border-radius: 3px;
+          overflow: hidden;
+        }
+        .progress-bar-fill {
+          height: 100%;
+          border-radius: 3px;
+          background: linear-gradient(90deg, #4ade80, #22c55e);
+          transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+        }
+
+        .height-divider {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #4b5563;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+        }
+        .height-divider::before, .height-divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: rgba(255,255,255,0.06);
+        }
+
+        .add-sport-form {
+          background: rgba(74,222,128,0.04);
+          border: 1px solid rgba(74,222,128,0.12);
+          border-radius: 16px;
+          padding: 16px;
+          margin-bottom: 16px;
+        }
+      `}</style>
+
+      {/* Delete confirmation popup */}
+      {deletingIdx !== null && (
+        <DeleteConfirm
+          sport={sportsArr[deletingIdx]}
+          onConfirm={doRemoveSport}
+          onCancel={cancelRemoveSport}
+        />
+      )}
+
+      {/* Background */}
+      <div className="fixed inset-0 grid-dots pointer-events-none opacity-20" />
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[45vw] h-[45vw] max-w-[500px] max-h-[500px] bg-green-500/10 rounded-full blur-[100px] animate-blob" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-blue-500/8 rounded-full blur-[80px] animate-blob" style={{ animationDelay: '3s' }} />
+      </div>
 
       <Navbar />
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 py-8 lg:py-12 mt-4">
-        {/* <div className="animate-fadeUp-1 mb-10 text-center">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-green-400/10 border border-green-400/20 mb-4 shadow-[0_0_15px_rgba(74,222,128,0.1)]">
-            <p className="text-green-400 text-xs font-bold uppercase tracking-[0.2em] m-0">User Account</p>
+      {/* Toast */}
+      {message && (
+        <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-2xl whitespace-nowrap transition-all ${
+          msgType === 'success'
+            ? 'bg-green-400/15 border border-green-400/25 text-green-400'
+            : 'bg-red-400/15 border border-red-400/25 text-red-400'
+        }`} style={{ animation: 'fadeUp 0.3s ease forwards' }}>
+          {msgType === 'success' ? '✅' : '⚠️'} {message}
+        </div>
+      )}
+
+      <div className="relative z-10 max-w-5xl mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+
+          {/* ════════════ LEFT SIDEBAR ════════════ */}
+          <div className="flex flex-col gap-4">
+
+            {/* Avatar card */}
+            <div className="anim-1 card text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-green-400/8 rounded-full blur-[60px] pointer-events-none" />
+
+              <div className="relative inline-block mb-4">
+                <div className="relative w-28 h-28 mx-auto">
+                  <div className="absolute inset-0 rounded-full animate-spin-slow opacity-50"
+                    style={{ background: 'conic-gradient(from 0deg, transparent, #4ade80 50%, transparent)', borderRadius: '50%' }} />
+                  <div className="absolute inset-[2px] rounded-full overflow-hidden">
+                    {avatarPrev
+                      ? <img src={avatarPrev} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full bg-green-400/10 flex items-center justify-center">
+                          <span className="font-bebas text-4xl text-green-400">{user?.name?.charAt(0)}</span>
+                        </div>
+                    }
+                  </div>
+                </div>
+                <label htmlFor="avatarInput" className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-400 hover:bg-green-300 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 shadow-lg">
+                  <span className="text-sm">📷</span>
+                </label>
+                <input id="avatarInput" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              </div>
+
+              <h2 className="font-semibold text-gray-900 dark:text-white text-lg">{user?.name}</h2>
+              <p className="text-gray-500 text-sm mb-3">{user?.email}</p>
+
+              <div className="flex flex-wrap gap-2 justify-center mb-4">
+                <span className={`badge ${
+                  role === 'player' ? 'bg-green-400/10 text-green-400 border-green-400/20' :
+                  role === 'coach'  ? 'bg-blue-400/10 text-blue-400 border-blue-400/20' :
+                  'bg-purple-400/10 text-purple-400 border-purple-400/20'
+                } capitalize`}>
+                  {role === 'player' ? '⚽' : role === 'coach' ? '🎓' : '🏟️'} {role?.replace('_', ' ')}
+                </span>
+              </div>
+
+              <div className="text-left">
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-gray-500">Profile completion</span>
+                  <span className="text-green-400 font-semibold">{pct}%</span>
+                </div>
+                <div className="progress-bar-track">
+                  <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+
+              {avatarFile && (
+                <button onClick={handleAvatarUpload} disabled={loading} className="btn-primary w-full mt-4 text-sm">
+                  {loading ? 'Uploading...' : '💾 Save Photo'}
+                </button>
+              )}
+            </div>
+
+            {/* Quick info */}
+            <div className="anim-2 card">
+              <h3 className="font-bebas text-lg tracking-wide text-gray-900 dark:text-white mb-3">QUICK INFO</h3>
+              <div className="flex flex-col gap-2">
+                {[
+                  { icon: '📞', label: basicForm.phone || 'Add phone' },
+                  { icon: '📍', label: [basicForm.city, basicForm.state].filter(Boolean).join(', ') || 'Add location' },
+                  { icon: '🌏', label: basicForm.country || 'India' },
+                  ...(role === 'player' && sportsArr.length > 0 ? [{ icon: '🏆', label: `${sportsArr.length} sport${sportsArr.length > 1 ? 's' : ''}` }] : []),
+                  ...(role === 'player' && certs.length > 0 ? [{ icon: '📜', label: `${certs.length} certificate${certs.length > 1 ? 's' : ''}` }] : []),
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-base">{item.icon}</span>
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Social links (player) */}
+            {role === 'player' && (
+              <div className="anim-3 card">
+                <h3 className="font-bebas text-lg tracking-wide text-gray-900 dark:text-white mb-3">SOCIALS</h3>
+                <div className="flex flex-col gap-2">
+                  <div className="field-group">
+                    <label className="field-label">Instagram</label>
+                    <input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@username" className="input-field" style={{ padding: '9px 12px', fontSize: '13px' }} />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Twitter / X</label>
+                    <input value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="@username" className="input-field" style={{ padding: '9px 12px', fontSize: '13px' }} />
+                  </div>
+                  <button onClick={handleSportsSave} disabled={loading} className="btn-primary text-sm mt-1">
+                    Save Socials
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <h1 className="font-bebas text-6xl lg:text-7xl tracking-wide shimmer-text">MY PROFILE</h1>
-        </div> */}
 
-        <div className="animate-fadeUp-2 mb-8">
-          <div className="relative bg-white/40 dark:bg-black/40 backdrop-blur-3xl border border-black/10 dark:border-white/10 rounded-[2rem] p-8 sm:p-10 shadow-2xl overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-green-400/10 rounded-full blur-[80px] pointer-events-none opacity-50" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[60px] pointer-events-none opacity-30" />
+          {/* ════════════ RIGHT MAIN CONTENT ════════════ */}
+          <div className="flex flex-col gap-4">
 
-            <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-8">
-              <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 rounded-full animate-spin-slow opacity-60"
-                  style={{ background: 'conic-gradient(from 0deg, transparent 0%, #4ade80 50%, transparent 100%)', padding: '2px', borderRadius: '50%' }}
-                />
-                <div className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-[#060606]">
-                  {preview ? (
-                    <img src={preview} alt="avatar" className="w-full h-full object-cover" />
+            {/* Page header */}
+            <div className="anim-1">
+              <p className="text-green-400 text-xs uppercase tracking-[0.3em] mb-0.5">Account</p>
+              <h1 className="font-bebas text-5xl tracking-wide shimmer-text">MY PROFILE</h1>
+            </div>
+
+            {/* Tabs */}
+            <div className="anim-2 flex gap-2 overflow-x-auto pb-1">
+              {TABS.map(t => (
+                <button key={t.id} onClick={() => setActiveTab(t.id)}
+                  className={`tab-btn ${activeTab === t.id ? 'tab-active' : 'tab-inactive'}`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── TAB: Basic Info ── */}
+            {activeTab === 'basic' && (
+              <div className="anim-cardIn card">
+                <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-5">BASIC INFORMATION</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="field-group">
+                    <label className="field-label">Full Name</label>
+                    <input value={basicForm.name} onChange={e => setBasicForm(p => ({ ...p, name: e.target.value }))} className="input-field" placeholder="Your name" />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Phone</label>
+                    <input value={basicForm.phone} onChange={e => setBasicForm(p => ({ ...p, phone: e.target.value }))} className="input-field" placeholder="+91 XXXXX XXXXX" />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Gender</label>
+                    <select value={basicForm.gender} onChange={e => setBasicForm(p => ({ ...p, gender: e.target.value }))} className="input-field">
+                      <option value="">Select gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Date of Birth</label>
+                    <DatePicker
+                      value={basicForm.dateOfBirth}
+                      onChange={val => setBasicForm(p => ({ ...p, dateOfBirth: val }))}
+                      placeholder="Select your birth date"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">City</label>
+                    <input value={basicForm.city} onChange={e => setBasicForm(p => ({ ...p, city: e.target.value }))} className="input-field" placeholder="Your city" />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">State</label>
+                    <input value={basicForm.state} onChange={e => setBasicForm(p => ({ ...p, state: e.target.value }))} className="input-field" placeholder="Your state" />
+                  </div>
+                  <div className="field-group sm:col-span-2">
+                    <label className="field-label">Bio</label>
+                    <textarea value={basicForm.bio} onChange={e => setBasicForm(p => ({ ...p, bio: e.target.value }))} className="input-field resize-none" rows={3} placeholder="Tell people about yourself..." />
+                  </div>
+                </div>
+                <button onClick={handleBasicSave} disabled={loading} className="btn-primary mt-5">
+                  {loading ? 'Saving...' : '💾 Save Basic Info'}
+                </button>
+              </div>
+            )}
+
+            {/* ── TAB: Sports Profile (player) ── */}
+            {activeTab === 'sports' && role === 'player' && (
+              <div className="flex flex-col gap-4">
+
+                {/* Body stats */}
+                <div className="anim-cardIn card">
+                  <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-5">BODY & STATS</h2>
+
+                  {/* Height */}
+                  <div className="mb-4">
+                    <label className="field-label mb-2 block">Height</label>
+                    {/* CM row */}
+                    <div className="field-group mb-2">
+                      <div className="flex gap-3 items-center">
+                        <input
+                          type="number"
+                          value={heightCm}
+                          onChange={e => handleCmChange(e.target.value)}
+                          className="input-field"
+                          placeholder="e.g. 175"
+                          min={100} max={250}
+                          style={{ flex: 1 }}
+                        />
+                        <span style={{ color: '#6b7280', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>cm</span>
+                      </div>
+                    </div>
+                    {/* Divider */}
+                    <div className="height-divider my-2">OR</div>
+                    {/* Ft / In row */}
+                    <div className="flex gap-3 items-center">
+                      <div className="flex gap-2 flex-1">
+                        <div className="flex gap-2 items-center flex-1">
+                          <input
+                            type="number"
+                            value={heightFt}
+                            onChange={e => handleFtInChange(e.target.value, heightIn)}
+                            className="input-field"
+                            placeholder="5"
+                            min={3} max={8}
+                          />
+                          <span style={{ color: '#6b7280', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>ft</span>
+                        </div>
+                        <div className="flex gap-2 items-center flex-1">
+                          <input
+                            type="number"
+                            value={heightIn}
+                            onChange={e => handleFtInChange(heightFt, e.target.value)}
+                            className="input-field"
+                            placeholder="9"
+                            min={0} max={11}
+                          />
+                          <span style={{ color: '#6b7280', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>in</span>
+                        </div>
+                      </div>
+                    </div>
+                    {heightCm && (
+                      <p style={{ fontSize: 11, color: '#4ade80', marginTop: 6, opacity: 0.7 }}>
+                        ≈ {heightCm} cm · {heightFt}′{heightIn}″
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Weight */}
+                  <div className="field-group">
+                    <label className="field-label">Weight</label>
+                    <div className="flex gap-3 items-center">
+                      <input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="input-field" placeholder="e.g. 70" min={30} max={200} style={{ flex: 1 }} />
+                      <span style={{ color: '#6b7280', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>kg</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sports list */}
+                <div className="anim-cardIn card" style={{ animationDelay: '0.05s' }}>
+                  <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-4">SPORTS I PLAY</h2>
+
+                  {/* Add sport form — always visible */}
+                  <div className="add-sport-form">
+                    <p className="field-label mb-3">Add a sport</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                      <div className="field-group">
+                        <label className="field-label">Sport</label>
+                        <select value={addSportForm.name} onChange={e => setAddSportForm(p => ({ ...p, name: e.target.value }))} className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }}>
+                          {SPORTS.map(sp => <option key={sp.value} value={sp.value}>{sp.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="field-group">
+                        <label className="field-label">Level</label>
+                        <select value={addSportForm.level} onChange={e => setAddSportForm(p => ({ ...p, level: e.target.value }))} className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }}>
+                          {LEVELS.map(l => <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>)}
+                        </select>
+                      </div>
+                      <button
+                        onClick={handleAddSport}
+                        disabled={sportsArr.length >= SPORTS.length}
+                        className="btn-primary flex-shrink-0"
+                        style={{ padding: '10px 20px', fontSize: 13 }}
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sport list */}
+                  {sportsArr.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-3xl mb-2">🏆</p>
+                      <p className="text-sm">No sports added yet — use the form above</p>
+                    </div>
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-green-400/20 to-green-400/5 flex items-center justify-center">
-                      <span className="font-bebas text-4xl text-green-400">
-                        {user?.name?.charAt(0).toUpperCase()}
-                      </span>
+                    <div className="flex flex-col gap-2">
+                      {sportsArr.map((s, idx) => (
+                        <div key={idx} className="sport-card" style={{ animation: `cardIn 0.35s ${idx * 0.04}s forwards`, opacity: 0 }}>
+                          <span className="text-2xl flex-shrink-0">{SPORT_EMOJI[s.name]}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-gray-900 dark:text-white font-semibold text-sm capitalize">{s.name}</p>
+                            <span className={`badge ${LEVEL_COLOR[s.level]} mt-1 inline-block`}>{s.level}</span>
+                          </div>
+                          <button
+                            onClick={() => confirmRemoveSport(idx)}
+                            className="btn-danger flex-shrink-0"
+                            title="Remove sport"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                <label
-                  htmlFor="avatarInput"
-                  className="absolute -bottom-1 -right-1 w-9 h-9 bg-green-400 hover:bg-green-300 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-lg hover:scale-110"
-                >
-                  <span className="text-base">📷</span>
-                </label>
-                <input id="avatarInput" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-              </div>
-
-              <div className="text-center sm:text-left flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{user?.name}</h2>
-                <p className="text-gray-500 text-sm mb-4">{user?.email}</p>
-
-                <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${badge.color}`}>
-                    <span>{badge.emoji}</span>
-                    {badge.label}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-400 bg-black/3 dark:bg-white/3">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400" />
-                    </span>
-                    Active
-                  </span>
+                {/* Achievements */}
+                <div className="anim-cardIn card" style={{ animationDelay: '0.1s' }}>
+                  <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-4">ACHIEVEMENTS</h2>
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      value={newAchievement}
+                      onChange={e => setNewAchievement(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addAchievement()}
+                      className="input-field"
+                      placeholder="e.g. District level cricket champion 2023"
+                    />
+                    <button onClick={addAchievement} className="btn-primary flex-shrink-0 px-4">Add</button>
+                  </div>
+                  {achievements.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {achievements.map((a, i) => (
+                        <div key={i} className="flex items-center justify-between gap-2 bg-green-400/4 border border-green-400/10 rounded-xl px-4 py-2.5">
+                          <span className="text-sm text-gray-900 dark:text-gray-200">🏅 {a}</span>
+                          <button onClick={() => setAchievements(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-500 hover:text-red-400 transition-colors text-xs">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                <button onClick={handleSportsSave} disabled={loading} className="btn-primary">
+                  {loading ? 'Saving...' : '💾 Save Sports Profile'}
+                </button>
               </div>
-            </div>
-          </div>
-        </div>
+            )}
 
-        {file && (
-          <div className="animate-fadeUp-2 mb-8">
-            <div className="bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-green-400/30 rounded-[1.5rem] p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_0_30px_rgba(74,222,128,0.1)]">
-              <div className="flex items-center gap-4 w-full sm:w-auto">
-                <img src={preview} alt="" className="w-14 h-14 rounded-2xl object-cover border-2 border-green-400/50 shadow-lg" />
-                <div className="flex-1">
-                  <p className="text-green-400 text-sm font-bold tracking-wide m-0">Ready to upload</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs truncate max-w-[200px] m-0">{file.name}</p>
-                </div>
-              </div>
-              <button
-                onClick={handleUpload}
-                disabled={loading}
-                className="save-btn sm:w-auto mt-2 sm:mt-0"
-                style={{ padding: '12px 28px' }}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                    </svg>
-                    Uploading...
-                  </span>
-                ) : 'Save Photo ✅'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {message && (
-          <div className="animate-fadeUp-2 mb-6">
-            <div className="bg-green-400/8 border border-green-400/20 text-green-400 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-              <span>✅</span> {message}
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="animate-fadeUp-2 mb-6">
-            <div className="bg-red-400/8 border border-red-400/20 text-red-400 px-4 py-3 rounded-2xl text-sm flex items-center gap-2">
-              <span>❌</span> {error}
-            </div>
-          </div>
-        )}
-
-        <div className="animate-fadeUp-3">
-          <div className="flex items-center gap-4 mb-6 mt-4">
-            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent flex-1" />
-            <p className="text-gray-900/40 dark:text-white/40 text-xs font-bold uppercase tracking-[0.3em] m-0">Profile Details</p>
-            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent flex-1" />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { label: 'Full Name', value: user?.name, icon: '👤' },
-              { label: 'Email Address', value: user?.email, icon: '📧' },
-              { label: 'Phone Number', value: user?.phone || 'Not added', icon: '📞' },
-              { label: 'Account Role', value: user?.role === 'player' ? 'Player ⚽' : 'Ground Owner 🏟️', icon: '🎭' },
-            ].map((item, i) => (
-              <div key={i} className="info-card">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{item.icon}</span>
-                  <div>
-                    <p className="text-gray-600 text-xs uppercase tracking-wider mb-0.5">{item.label}</p>
-                    <p className="text-gray-900 dark:text-white font-medium">{item.value}</p>
+            {/* ── TAB: Coaching Profile (coach) ── */}
+            {activeTab === 'coaching' && role === 'coach' && (
+              <div className="anim-cardIn card">
+                <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-2">COACHING PROFILE</h2>
+                {coachData?.status === 'pending' && (
+                  <div className="bg-yellow-400/8 border border-yellow-400/20 text-yellow-400 rounded-xl px-4 py-3 text-sm mb-4">
+                    ⏳ Your coach application is pending admin approval
+                  </div>
+                )}
+                {coachData?.status === 'rejected' && (
+                  <div className="bg-red-400/8 border border-red-400/20 text-red-400 rounded-xl px-4 py-3 text-sm mb-4">
+                    ❌ Rejected: {coachData.rejectionReason}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="field-group">
+                    <label className="field-label">Experience (years)</label>
+                    <input type="number" value={coachForm.experience || ''} onChange={e => setCoachForm(p => ({ ...p, experience: e.target.value }))} className="input-field" placeholder="Years of coaching" />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Coaching Level</label>
+                    <select value={coachForm.coachingLevel || ''} onChange={e => setCoachForm(p => ({ ...p, coachingLevel: e.target.value }))} className="input-field">
+                      <option value="">Select level</option>
+                      {['beginner', 'intermediate', 'advanced', 'professional'].map(l => <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>)}
+                    </select>
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Hourly Rate (₹)</label>
+                    <input type="number" value={coachForm.hourlyRate || ''} onChange={e => setCoachForm(p => ({ ...p, hourlyRate: e.target.value }))} className="input-field" placeholder="e.g. 500" />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">City</label>
+                    <input value={coachForm.city || ''} onChange={e => setCoachForm(p => ({ ...p, city: e.target.value }))} className="input-field" placeholder="Your city" />
+                  </div>
+                  <div className="field-group sm:col-span-2">
+                    <label className="field-label">Certifications</label>
+                    <textarea value={coachForm.certifications || ''} onChange={e => setCoachForm(p => ({ ...p, certifications: e.target.value }))} className="input-field resize-none" rows={2} placeholder="List your certifications..." />
+                  </div>
+                  <div className="field-group sm:col-span-2">
+                    <label className="field-label">Bio</label>
+                    <textarea value={coachForm.bio || ''} onChange={e => setCoachForm(p => ({ ...p, bio: e.target.value }))} className="input-field resize-none" rows={3} placeholder="Describe your coaching style..." />
                   </div>
                 </div>
+                <button onClick={handleCoachSave} disabled={loading} className="btn-primary mt-5">
+                  {loading ? 'Saving...' : '💾 Save Coaching Profile'}
+                </button>
               </div>
-            ))}
+            )}
+
+            {/* ── TAB: Certificates ── */}
+            {activeTab === 'certs' && (
+              <div className="flex flex-col gap-4">
+
+                <div className="anim-cardIn card">
+                  <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-5">ADD CERTIFICATE</h2>
+                  <div className="flex flex-col gap-3">
+                    <div className="field-group">
+                      <label className="field-label">Certificate Title</label>
+                      <input value={certTitle} onChange={e => setCertTitle(e.target.value)} className="input-field" placeholder="e.g. SAI Level 1 Cricket Certificate" />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Upload File (PDF or Image)</label>
+                      <label className="upload-zone p-5 flex flex-col items-center gap-2 cursor-pointer text-center">
+                        <span className="text-3xl">{certFile ? '📄' : '📎'}</span>
+                        <span className="text-sm text-gray-500">{certFile ? certFile.name : 'Click to choose PDF or image'}</span>
+                        <input ref={certInputRef} type="file" accept="image/*,.pdf" onChange={e => setCertFile(e.target.files[0])} className="hidden" />
+                      </label>
+                    </div>
+                    <button onClick={handleCertUpload} disabled={certLoading || !certTitle || !certFile} className="btn-primary">
+                      {certLoading ? 'Uploading...' : '📤 Upload Certificate'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="anim-cardIn card" style={{ animationDelay: '0.05s' }}>
+                  <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-4">MY CERTIFICATES ({certs.length})</h2>
+                  {certs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-3xl mb-2">📜</p>
+                      <p className="text-sm">No certificates uploaded yet</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {certs.map((c, i) => (
+                        <div key={c._id} className="cert-card" style={{ animation: `cardIn 0.4s ${i * 0.05}s forwards`, opacity: 0 }}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 bg-blue-400/10 border border-blue-400/20 rounded-xl flex items-center justify-center flex-shrink-0 text-lg">
+                              {c.fileUrl?.includes('.pdf') ? '📄' : '🖼️'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-gray-900 dark:text-white font-semibold text-sm truncate">{c.title}</p>
+                              <p className="text-gray-500 text-xs">{new Date(c.uploadedAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <a href={c.fileUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-xs bg-blue-400/10 border border-blue-400/20 text-blue-400 px-3 py-1.5 rounded-xl hover:bg-blue-400/20 transition-all font-semibold">
+                              View
+                            </a>
+                            <button onClick={() => handleCertDelete(c._id)} className="btn-danger">✕</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
-
-        {/* <div className="animate-fadeUp-4 mt-8">
-          <div className="upload-zone p-6 text-center cursor-pointer" onClick={() => document.getElementById('avatarInput').click()}>
-            <div className="text-3xl mb-3">📷</div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Click to change profile photo</p>
-            <p className="text-gray-600 text-xs mt-1">JPG, PNG or WEBP — Max 5MB</p>
-          </div>
-        </div> */}
       </div>
     </div>
   );

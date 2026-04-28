@@ -25,19 +25,18 @@ const userSchema = new mongoose.Schema(
       enum: ['player', 'ground_owner', 'coach', 'admin'],
       default: 'player',
     },
-    phone: {
-      type: String,
-      trim: true,
-    },
-    avatar: {
-      type: String,
-      default: '',
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+    phone: { type: String, trim: true },
+    avatar: { type: String, default: '' },
+    isActive: { type: Boolean, default: true },
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
+    // ── extended profile fields (all roles) ──
+    gender: { type: String, enum: ['male', 'female', 'other', ''], default: '' },
+    dateOfBirth: { type: Date, default: null },
+    city: { type: String, trim: true, default: '' },
+    state: { type: String, trim: true, default: '' },
+    country: { type: String, trim: true, default: 'India' },
+    bio: { type: String, trim: true, default: '' },
   },
   { timestamps: true }
 );

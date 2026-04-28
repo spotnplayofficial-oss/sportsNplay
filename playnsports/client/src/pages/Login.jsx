@@ -367,7 +367,7 @@ const Login = () => {
           {/* Google Login */}
           <div className="animate-fadeUp-5 flex flex-col gap-3">
             
-            <a  href="https://spotnplay-1.onrender.com/api/auth/google"
+            <a  href={`${import.meta.env.VITE_API_URL}/auth/google`}
               className="google-btn"
             >
               <svg width="18" height="18" viewBox="0 0 24 24">

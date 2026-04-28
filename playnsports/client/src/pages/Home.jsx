@@ -443,12 +443,12 @@ const Home = () => {
             </div>
             <div ref={statsRef} className="animate-fadeUp-4 flex justify-center gap-12 mt-16">
               <div className="text-center">
-                <div className="font-bebas text-4xl text-green-400"><AnimatedCounter target={stats.players} suffix="+" /></div>
+                <div className="font-bebas text-4xl text-green-400"><AnimatedCounter target={stats.players} /></div>
                 <div className="text-xs text-gray-600 uppercase tracking-widest mt-1">Players</div>
               </div>
               <div className="w-px bg-black/8 dark:bg-white/8" />
               <div className="text-center">
-                <div className="font-bebas text-4xl text-green-400"><AnimatedCounter target={stats.grounds} suffix="+" /></div>
+                <div className="font-bebas text-4xl text-green-400"><AnimatedCounter target={stats.grounds} /></div>
                 <div className="text-xs text-gray-600 uppercase tracking-widest mt-1">Grounds</div>
               </div>
               <div className="w-px bg-black/8 dark:bg-white/8" />

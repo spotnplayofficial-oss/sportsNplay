@@ -65,6 +65,11 @@ app.get('/api', (req, res) => {
   res.json({ message: 'API is working 🚀' });
 });
 
+app.use((err, req, res, next) => {
+  console.error("🔥 GLOBAL ERROR:", err);
+  next(err);
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/coaches', coachRoutes);
 app.use('/api/admin', adminRoutes);

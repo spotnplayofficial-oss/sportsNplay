@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Booking from '../models/Booking.js';
 import Ground from '../models/Ground.js';
+import User from '../models/User.js';
 
 
 const getMyBookings = asyncHandler(async (req, res) => {
@@ -97,6 +98,12 @@ const bookGroundSlot = asyncHandler(async (req, res) => {
     advancePrice: 0,
     remainingPrice: 0,
     status: 'completed'
+  });
+
+  // mark booking day on user
+  const bDate = slot.date; // already 'YYYY-MM-DD'
+  await User.findByIdAndUpdate(req.user._id, {
+    $addToSet: { bookedDays: bDate }
   });
 
   res.status(201).json(booking);
@@ -203,6 +210,11 @@ const bookSocialGroundSlot = asyncHandler(async (req, res) => {
     remainingPrice: 0,
     status: 'pending_approval'
   });
+  // mark booking day on user
+    const bDate = date; // already 'YYYY-MM-DD'
+    await User.findByIdAndUpdate(req.user._id, {
+      $addToSet: { bookedDays: bDate }
+    });
 
   res.status(201).json(booking);
 });

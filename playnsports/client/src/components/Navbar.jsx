@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useEffect, useState } from 'react';
-
+import API from '../api/axios';
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -10,6 +10,7 @@ const Navbar = () => {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [streakData, setStreakData] = useState(null);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -37,6 +38,14 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    API.get('/users/streak')
+      .then(({ data }) => setStreakData(data))
+      .catch(() => {});
+  }, [user]);
+
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
@@ -87,6 +96,35 @@ const Navbar = () => {
             <button onClick={toggleTheme} className="p-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xl focus:outline-none" title="Toggle Theme">
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
+            {user && streakData && (
+              <div
+                title={streakData.bookedToday ? 'Ground booked today! ⭐' : `${streakData.loginStreak} day streak 🔥`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '6px 12px',
+                  borderRadius: 12,
+                  background: streakData.bookedToday
+                    ? 'rgba(251,191,36,0.1)'
+                    : 'rgba(74,222,128,0.06)',
+                  border: `1px solid ${streakData.bookedToday ? 'rgba(251,191,36,0.25)' : 'rgba(74,222,128,0.15)'}`,
+                  cursor: 'default',
+                  transition: 'all 0.3s',
+                }}
+              >
+                <span style={{ fontSize: 16 }}>
+                  {streakData.bookedToday ? '⭐' : '🔥'}
+                </span>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: streakData.bookedToday ? '#fbbf24' : '#4ade80',
+                }}>
+                  {streakData.loginStreak}
+                </span>
+              </div>
+            )}
             {user ? (
               <>
                 <Link to="/profile" className="flex items-center gap-3 group">

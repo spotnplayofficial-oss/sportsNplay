@@ -87,7 +87,7 @@ const updateGround = asyncHandler(async (req, res) => {
   ground.name = name || ground.name;
   ground.sport = sport || ground.sport;
   ground.address = address || ground.address;
-  ground.pricePerHour = pricePerHour || ground.pricePerHour;
+  if (pricePerHour !== undefined) ground.pricePerHour = pricePerHour;
   ground.amenities = amenities || ground.amenities;
   
   if (isSocial !== undefined) {

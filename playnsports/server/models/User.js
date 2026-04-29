@@ -37,6 +37,13 @@ const userSchema = new mongoose.Schema(
     state: { type: String, trim: true, default: '' },
     country: { type: String, trim: true, default: 'India' },
     bio: { type: String, trim: true, default: '' },
+
+    // ── streak ──
+    loginStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    lastLoginDate: { type: String, default: null },
+    activeDays: [{ type: String }],   
+    bookedDays: [{ type: String }],   
   },
   { timestamps: true }
 );

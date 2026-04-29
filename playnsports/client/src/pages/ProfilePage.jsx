@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 import Navbar from '../components/Navbar';
+import StreakCalendar from "../components/StreakCalendar";
 
 /* ─────────────────────────────────────────────
    Constants
@@ -31,6 +32,7 @@ const TABS_PLAYER = [
   { id: 'basic',    label: '👤 Basic Info' },
   { id: 'sports',   label: '🏆 Sports Profile' },
   { id: 'certs',    label: '📜 Certificates' },
+  { id: 'streak',   label: '🔥 Streak' },
 ];
 
 const TABS_COACH = [
@@ -1107,6 +1109,15 @@ const ProfilePage = () => {
                 <button onClick={handleSportsSave} disabled={loading} className="btn-primary">
                   {loading ? 'Saving...' : '💾 Save Sports Profile'}
                 </button>
+              </div>
+            )}
+            {/* ── TAB: Streak ── */}
+            {activeTab === 'streak' && role === 'player' && (
+              <div className="anim-cardIn card">
+                <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white mb-5">
+                  ACTIVITY STREAK
+                </h2>
+                <StreakCalendar />
               </div>
             )}
 

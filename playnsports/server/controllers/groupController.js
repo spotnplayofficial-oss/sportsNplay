@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Group from '../models/Group.js';
+import Player from '../models/Player.js';
 
 const createGroup = asyncHandler(async (req, res) => {
   const { name, sport, maxMembers, joiningDeadline, coordinates } = req.body;
@@ -192,6 +193,44 @@ const getMyInvitations = asyncHandler(async (req, res) => {
   res.json(groups);
 });
 
+// Add new controller function
+const getInvitablePlayers = asyncHandler(async (req, res) => {
+  const group = await Group.findById(req.params.id);
+  if (!group) { res.status(404); throw new Error('Group not found'); }
+  if (group.createdBy.toString() !== req.user._id.toString()) {
+    res.status(403); throw new Error('Only creator can invite');
+  }
+
+  // Get all players except already members and already invited
+  const excludeIds = [
+    ...group.members.map(m => m.toString()),
+    ...group.invitations.map(i => i.user.toString()),
+  ];
+
+  const players = await Player.find({
+    user: { $nin: excludeIds },
+    isAvailable: true,
+  }).populate('user', 'name avatar phone');
+
+  res.json(players);
+});
+
+const removeMember = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+  const group = await Group.findById(req.params.id);
+  if (!group) { res.status(404); throw new Error('Group not found'); }
+  if (group.createdBy.toString() !== req.user._id.toString()) {
+    res.status(403); throw new Error('Only creator can remove members');
+  }
+  if (userId === group.createdBy.toString()) {
+    res.status(400); throw new Error('Cannot remove group creator');
+  }
+  group.members = group.members.filter(m => m.toString() !== userId);
+  await group.save();
+  res.json({ message: 'Member removed ✅' });
+});
+
+
 export {
   createGroup,
   getMyGroups,
@@ -202,4 +241,6 @@ export {
   leaveGroup,
   closeGroup,
   getMyInvitations,
+  getInvitablePlayers,
+  removeMember
 };

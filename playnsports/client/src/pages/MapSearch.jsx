@@ -209,6 +209,15 @@ const MapSearch = () => {
   return () => observer.disconnect();
 }, []);
 
+// Add this useEffect in MapSearch
+useEffect(() => {
+  const handleFocus = () => {
+    if (initialLoaded && position) handleInitialLoad();
+  };
+  window.addEventListener('focus', handleFocus);
+  return () => window.removeEventListener('focus', handleFocus);
+}, [initialLoaded, position]);
+
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `

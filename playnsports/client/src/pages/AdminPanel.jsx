@@ -223,9 +223,7 @@ const AdminPanel = () => {
 
         {/* Header */}
         <div className="anim-fadeUp mb-8">
-          <p className="text-green-400 text-xs uppercase tracking-[0.3em] mb-1">Control Centre</p>
           <h1 className="font-bebas text-5xl md:text-6xl tracking-wide shimmer-text">ADMIN's DASHBOARD</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage users, bookings, coaches & social grounds</p>
         </div>
 
         {/* ── Stats Grid ── */}
@@ -298,30 +296,6 @@ const AdminPanel = () => {
                   </div>
                 </button>
               ))}
-            </div>
-
-            <div className="mt-6 card">
-              <h3 className="font-bebas text-xl tracking-wide text-gray-900 dark:text-white mb-4">PLATFORM BREAKDOWN</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {stats && [
-                  { label: 'Players',        value: stats.playerCount,       total: stats.totalUsers, color: '#4ade80' },
-                  { label: 'Ground Owners',  value: stats.groundOwnerCount,  total: stats.totalUsers, color: '#60a5fa' },
-                  { label: 'Approved Coaches', value: stats.approvedCoaches, total: stats.totalCoaches, color: '#a78bfa' },
-                ].map((item, i) => {
-                  const pct = item.total > 0 ? Math.round((item.value / item.total) * 100) : 0;
-                  return (
-                    <div key={i}>
-                      <div className="flex justify-between text-xs mb-1.5">
-                        <span className="text-gray-500">{item.label}</span>
-                        <span style={{ color: item.color }} className="font-semibold">{item.value} ({pct}%)</span>
-                      </div>
-                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: item.color }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           </div>
         )}

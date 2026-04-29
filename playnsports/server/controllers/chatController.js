@@ -53,16 +53,28 @@ const getOrCreateGroupConversation = asyncHandler(async (req, res) => {
 
   if (!conversation) {
     const memberIds = group.members.map((m) => m._id);
+    const uniqueIds = [...new Set([group.createdBy.toString(), ...memberIds.map(id => id.toString())])];
     conversation = await Conversation.create({
       type: 'group',
       group: groupId,
-      participants: [group.createdBy, ...memberIds],
+      participants: uniqueIds,
     });
     conversation = await Conversation.findById(conversation._id)
       .populate('participants', 'name avatar role')
       .populate('lastMessage')
       .populate('group', 'name sport');
   }
+
+
+    if (conversation) {
+      const seen = new Set();
+      const deduped = conversation.participants.filter(p => {
+        const id = p._id?.toString() || p.toString();
+        if (seen.has(id)) return false;
+        seen.add(id); return true;
+      });
+      conversation.participants = deduped;
+}
 
   res.json(conversation);
 });

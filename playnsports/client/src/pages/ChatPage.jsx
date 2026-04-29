@@ -299,12 +299,12 @@ const ChatPage = () => {
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden relative z-10 px-4 pb-4 lg:px-8 lg:pb-8 pt-2" style={{ height:'calc(100vh - 64px)' }}>
-        <div className="flex flex-1 w-full max-w-7xl mx-auto rounded-[2rem] overflow-hidden bg-white/40 dark:bg-black/40 border border-black/10 dark:border-white/10 backdrop-blur-3xl shadow-2xl animate-fadeUp-1">
+        <div className="flex flex-1 w-full max-w-7xl mx-auto rounded-[1rem] overflow-hidden bg-white/40 dark:bg-black/40 border border-black/10 dark:border-white/10 backdrop-blur-3xl shadow-2xl animate-fadeUp-1">
 
           {/* ── Sidebar ── */}
           <div className={`flex flex-col border-r border-black/6 dark:border-white/6 bg-black/2 dark:bg-white/2 ${activeConv ? 'hidden md:flex' : 'flex'} w-full md:w-[340px] flex-shrink-0`}>
             <div className="p-4 border-b border-black/6 dark:border-white/6">
-              <h2 className="font-bebas text-2xl shimmer-text tracking-wide mb-3">MESSAGES</h2>
+              {/* <h2 className="font-bebas text-2xl shimmer-text tracking-wide mb-3">MESSAGES</h2> */}
               <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search conversations..." className="search-input" />
             </div>
 

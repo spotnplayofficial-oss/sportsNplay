@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import GroupInviteModal from '../components/GroupInviteModal';
-import { GROUP_STYLES } from '../components/GroupStyles';
+import { GROUP_STYLES } from '../components/GroupStyles.js';
 
 /* ─── constants ─── */
 const SPORT_EMOJI = {

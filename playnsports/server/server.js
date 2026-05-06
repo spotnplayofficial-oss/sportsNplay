@@ -83,7 +83,6 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
-
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;

@@ -93,7 +93,7 @@ const Navbar = () => {
 
           {/* Desktop Right */}
           <div className="hidden md:flex items-center gap-4">
-            <button onClick={toggleTheme} className="p-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xl focus:outline-none" title="Toggle Theme">
+            <button onClick={toggleTheme} className="p-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xl cursor-pointer focus:outline-none" title="Toggle Theme">
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
             {user && streakData && (
@@ -103,7 +103,7 @@ const Navbar = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 5,
-                  padding: '6px 12px',
+                  padding: '9px 7px',
                   borderRadius: 12,
                   background: streakData.bookedToday
                     ? 'rgba(251,191,36,0.1)'
@@ -136,10 +136,10 @@ const Navbar = () => {
                         {user.name?.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:text-white transition-colors">{user.name}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-300 dark:text-white transition-colors">{user.name}</span>
                   </div>
                 </Link>
-                <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-400 border border-black/10 dark:border-white/10 hover:border-red-500/30 px-4 py-2 rounded-xl transition-all duration-200">
+                <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-400 border border-black/10 dark:border-white/10 hover:border-red-500/30 px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer">
                   Logout
                 </button>
               </>

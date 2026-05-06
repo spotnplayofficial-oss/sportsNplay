@@ -14,21 +14,27 @@ const createGround = asyncHandler(async (req, res) => {
     location: { type: 'Point', coordinates: coords },
     amenities: amenities || [],
     isSocial: isSocial || false,
+    isApproved: false,
+    approvalStatus: 'pending',
   });
 
   res.status(201).json(ground);
 });
 
+// Owner sees ALL their grounds (including pending/rejected) so they know status
 const getMyGrounds = asyncHandler(async (req, res) => {
   const grounds = await Ground.find({ owner: req.user._id });
   res.json(grounds);
 });
 
+// Public/player-facing: only approved grounds
 const getNearbyGrounds = asyncHandler(async (req, res) => {
   const { longitude, latitude, radius = 5000, sport } = req.query;
 
   const query = {
     isActive: true,
+    isApproved: true,
+    approvalStatus: 'approved',
     location: {
       $near: {
         $geometry: {
@@ -67,7 +73,38 @@ const addSlots = asyncHandler(async (req, res) => {
     throw new Error('Ground not found or unauthorized');
   }
 
+  if (ground.approvalStatus !== 'approved') {
+    res.status(403);
+    throw new Error('Cannot add slots — ground is not yet approved by admin');
+  }
+
   ground.slots.push(...slots);
+  await ground.save();
+
+  res.json(ground);
+});
+
+// Owner removes a slot they created (only if not booked)
+const removeSlot = asyncHandler(async (req, res) => {
+  const ground = await Ground.findOne({ _id: req.params.id, owner: req.user._id });
+
+  if (!ground) {
+    res.status(404);
+    throw new Error('Ground not found or unauthorized');
+  }
+
+  const slot = ground.slots.id(req.params.slotId);
+  if (!slot) {
+    res.status(404);
+    throw new Error('Slot not found');
+  }
+
+  if (slot.isBooked) {
+    res.status(400);
+    throw new Error('Cannot remove a slot that is already booked');
+  }
+
+  ground.slots = ground.slots.filter(s => s._id.toString() !== req.params.slotId);
   await ground.save();
 
   res.json(ground);
@@ -89,14 +126,13 @@ const updateGround = asyncHandler(async (req, res) => {
   ground.address = address || ground.address;
   if (pricePerHour !== undefined) ground.pricePerHour = pricePerHour;
   ground.amenities = amenities || ground.amenities;
-  
-  if (isSocial !== undefined) {
-    ground.isSocial = isSocial;
-  }
-  
-  if (coords) {
-    ground.location = { type: 'Point', coordinates: coords };
-  }
+  if (isSocial !== undefined) ground.isSocial = isSocial;
+  if (coords) ground.location = { type: 'Point', coordinates: coords };
+
+  // If approved ground is edited, send back to pending so admin re-reviews
+  // (optional UX choice — comment out if you don't want this)
+  // ground.approvalStatus = 'pending';
+  // ground.isApproved = false;
 
   await ground.save();
   res.json(ground);
@@ -117,12 +153,11 @@ const deleteGround = asyncHandler(async (req, res) => {
 const getAllGrounds = asyncHandler(async (req, res) => {
   const { sport } = req.query;
 
-  const query = { isActive: true };
+  const query = { isActive: true, isApproved: true, approvalStatus: 'approved' };
   if (sport) query.sport = sport;
 
   const grounds = await Ground.find(query).populate('owner', 'name phone');
   res.json(grounds);
 });
 
-export { createGround, getMyGrounds, getNearbyGrounds, getAllGrounds, getGroundById, addSlots, updateGround, deleteGround };
-
+export { createGround, getMyGrounds, getNearbyGrounds, getAllGrounds, getGroundById, addSlots, removeSlot, updateGround, deleteGround };

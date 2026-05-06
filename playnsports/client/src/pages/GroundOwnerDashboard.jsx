@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import MapLocationPicker from '../components/MapLocationPicker';
+import SlotScheduler from '../components/SlotScheduler';
 
 const GroundOwnerDashboard = () => {
   const { user } = useAuth();
@@ -24,10 +25,6 @@ const GroundOwnerDashboard = () => {
   });
   const [amenityInput, setAmenityInput] = useState('');
   const PRESET_AMENITIES = ['Parking', 'Washroom', 'Drinking Water', 'Floodlights', 'Seating', 'Changing Room', 'First Aid', 'Equipment Rental'];
-
-  const [slotForm, setSlotForm] = useState({
-    date: '', startTime: '', endTime: '',
-  });
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -62,7 +59,7 @@ const GroundOwnerDashboard = () => {
       .animate-spin { animation: spin 1s linear infinite; }
 
       .shimmer-text {
-        background: linear-gradient(90deg, var(--shimmer-color));
+        background: linear-gradient(90deg, #4ade80, #86efac, #4ade80);
         background-size: 200% auto;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -70,20 +67,20 @@ const GroundOwnerDashboard = () => {
       }
 
       .grid-dots {
-        background-image: radial-gradient(circle, var(--glass-05, rgba(255,255,255,0.05)) 1px, transparent 1px);
+        background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
         background-size: 28px 28px;
       }
 
       .glass-card {
-        background: var(--glass-02, rgba(255,255,255,0.02));
-        border: 1px solid var(--glass-06, rgba(255,255,255,0.06));
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 24px;
         padding: 24px;
       }
 
       .stat-card {
-        background: var(--glass-02, rgba(255,255,255,0.02));
-        border: 1px solid var(--glass-06, rgba(255,255,255,0.06));
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 20px;
         padding: 20px;
         transition: all 0.3s ease;
@@ -113,6 +110,7 @@ const GroundOwnerDashboard = () => {
         transition: all 0.3s ease;
         font-family: 'DM Sans', sans-serif;
         white-space: nowrap;
+        cursor: pointer;
       }
       .tab-active {
         background: rgba(74,222,128,0.12);
@@ -121,34 +119,34 @@ const GroundOwnerDashboard = () => {
       }
       .tab-inactive {
         background: transparent;
-        color: var(--text-muted);
+        color: #6b7280;
         border: 1px solid transparent;
       }
-      .tab-inactive:hover { color: var(--text-muted); }
+      .tab-inactive:hover { color: #9ca3af; }
 
       .input-field {
         width: 100%;
-        background: var(--glass-05);
-        border: 1px solid var(--glass-08, rgba(255,255,255,0.08));
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 12px;
         padding: 12px 14px;
-        color: var(--text-main);
+        color: inherit;
         font-size: 14px;
         outline: none;
         transition: all 0.3s ease;
         font-family: 'DM Sans', sans-serif;
+        box-sizing: border-box;
       }
       .input-field:focus {
         border-color: rgba(74,222,128,0.4);
-        background: var(--glass-05, rgba(255,255,255,0.05));
         box-shadow: 0 0 0 3px rgba(74,222,128,0.06);
       }
-      .input-field::placeholder { color: var(--text-muted); opacity: 0.5; }
-      .input-field option { background: var(--bg-surface); }
+      .input-field::placeholder { color: #6b7280; opacity: 0.7; }
+      .input-field option { background: #111; }
 
       .label {
         font-size: 11px;
-        color: var(--text-muted);
+        color: #6b7280;
         text-transform: uppercase;
         letter-spacing: 0.1em;
         margin-bottom: 6px;
@@ -166,6 +164,8 @@ const GroundOwnerDashboard = () => {
         position: relative;
         overflow: hidden;
         font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+        border: none;
       }
       .btn-primary::before {
         content: '';
@@ -177,23 +177,24 @@ const GroundOwnerDashboard = () => {
       }
       .btn-primary:hover::before { left: 100%; }
       .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74,222,128,0.3); }
-      .btn-primary:disabled { opacity: 0.5; transform: none; }
+      .btn-primary:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
 
       .btn-secondary {
-        background: var(--glass-04, rgba(255,255,255,0.04));
-        border: 1px solid var(--glass-08, rgba(255,255,255,0.08));
-        color: var(--text-muted);
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #9ca3af;
         font-weight: 500;
         border-radius: 12px;
         padding: 10px 18px;
         font-size: 13px;
         transition: all 0.3s ease;
         font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
       }
       .btn-secondary:hover {
-        background: var(--glass-05);
-        border-color: var(--text-muted);
-        color: var(--text-main);
+        background: rgba(255,255,255,0.06);
+        border-color: #9ca3af;
+        color: white;
       }
 
       .btn-danger {
@@ -206,17 +207,19 @@ const GroundOwnerDashboard = () => {
         font-size: 13px;
         transition: all 0.2s ease;
         font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
       }
       .btn-danger:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
 
       .ground-card {
-        background: var(--glass-02, rgba(255,255,255,0.02));
-        border: 1px solid var(--glass-06, rgba(255,255,255,0.06));
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 20px;
         padding: 20px;
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+        cursor: pointer;
       }
       .ground-card::before {
         content: '';
@@ -236,8 +239,8 @@ const GroundOwnerDashboard = () => {
       .ground-card.selected::before { opacity: 1; }
 
       .booking-card {
-        background: var(--glass-02, rgba(255,255,255,0.02));
-        border: 1px solid var(--glass-05, rgba(255,255,255,0.05));
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
         border-radius: 14px;
         padding: 14px;
         transition: all 0.2s ease;
@@ -254,7 +257,7 @@ const GroundOwnerDashboard = () => {
       .slot-pill {
         background: rgba(74,222,128,0.06);
         border: 1px solid rgba(74,222,128,0.12);
-        color: var(--text-muted);
+        color: #6b7280;
         font-size: 11px;
         padding: 4px 10px;
         border-radius: 100px;
@@ -270,7 +273,7 @@ const GroundOwnerDashboard = () => {
 
       .progress-bar {
         height: 4px;
-        background: var(--glass-06, rgba(255,255,255,0.06));
+        background: rgba(255,255,255,0.06);
         border-radius: 100px;
         overflow: hidden;
       }
@@ -287,6 +290,12 @@ const GroundOwnerDashboard = () => {
         border-radius: 16px;
         padding: 16px;
       }
+
+      /* Light mode overrides */
+      @media (prefers-color-scheme: light) {
+        .input-field { color: #111; }
+        .input-field option { background: #fff; }
+      }
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
@@ -297,14 +306,22 @@ const GroundOwnerDashboard = () => {
   const showMessage = (msg, type = 'success') => {
     setMessage(msg);
     setMessageType(type);
-    setTimeout(() => setMessage(''), 3000);
+    setTimeout(() => setMessage(''), 3500);
   };
 
   const fetchGrounds = async () => {
     try {
       const { data } = await API.get('/grounds/my');
       setGrounds(data);
-    } catch { setGrounds([]); }
+      // If a ground was selected, refresh it from fresh data
+      if (selectedGround) {
+        const refreshed = data.find(g => g._id === selectedGround._id);
+        if (refreshed) setSelectedGround(refreshed);
+      }
+    } catch (err) {
+      console.error('fetchGrounds error:', err);
+      setGrounds([]);
+    }
   };
 
   const fetchGroundBookings = async (groundId) => {
@@ -325,10 +342,6 @@ const GroundOwnerDashboard = () => {
     }
   };
 
-  const handleDetectLocation = () => {
-    setShowMapPicker(true);
-  };
-
   const handleAddAmenity = (val) => {
     const trimmed = val.trim();
     if (trimmed && !groundForm.amenities.includes(trimmed)) {
@@ -345,37 +358,30 @@ const GroundOwnerDashboard = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      const payload = {
+        name: groundForm.name,
+        sport: groundForm.sport,
+        address: groundForm.address,
+        pricePerHour: Number(groundForm.pricePerHour),
+        amenities: groundForm.amenities,
+        longitude: groundForm.coordinates[0],
+        latitude: groundForm.coordinates[1],
+        isSocial: groundForm.isSocial,
+      };
+
       if (isEditing) {
-        await API.put(`/grounds/${editingGroundId}`, {
-          name: groundForm.name,
-          sport: groundForm.sport,
-          address: groundForm.address,
-          pricePerHour: Number(groundForm.pricePerHour),
-          amenities: groundForm.amenities,
-          longitude: groundForm.coordinates[0],
-          latitude: groundForm.coordinates[1],
-          isSocial: groundForm.isSocial,
-        });
+        const { data } = await API.put(`/grounds/${editingGroundId}`, payload);
         showMessage('Ground updated successfully! 🏟️');
+        setSelectedGround(data);
       } else {
-        await API.post('/grounds', {
-          name: groundForm.name,
-          sport: groundForm.sport,
-          address: groundForm.address,
-          pricePerHour: Number(groundForm.pricePerHour),
-          amenities: groundForm.amenities,
-          longitude: groundForm.coordinates[0],
-          latitude: groundForm.coordinates[1],
-          isSocial: groundForm.isSocial,
-        });
+        await API.post('/grounds', payload);
         showMessage('Ground created successfully! 🏟️');
       }
-      
+
       setGroundForm({ name: '', sport: 'cricket', address: '', pricePerHour: '', amenities: [], coordinates: [], isSocial: false });
       setIsEditing(false);
       setEditingGroundId(null);
-      fetchGrounds();
-      if (isEditing) fetchGroundBookings(editingGroundId);
+      await fetchGrounds();
       setActiveTab('grounds');
     } catch (err) {
       showMessage(err.response?.data?.message || (isEditing ? 'Failed to update ground' : 'Failed to create ground'), 'error');
@@ -397,21 +403,6 @@ const GroundOwnerDashboard = () => {
     setActiveTab('create');
   };
 
-  const handleAddSlot = async (e) => {
-    e.preventDefault();
-    if (!selectedGround) return showMessage('Select a ground first', 'error');
-    try {
-      await API.post(`/grounds/${selectedGround._id}/slots`, {
-        slots: [slotForm],
-      });
-      showMessage('Slot added ✅');
-      setSlotForm({ date: '', startTime: '', endTime: '' });
-      fetchGrounds();
-    } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed', 'error');
-    }
-  };
-
   const handleDeleteGround = async (groundId) => {
     if (!window.confirm('Delete this ground permanently?')) return;
     try {
@@ -423,15 +414,21 @@ const GroundOwnerDashboard = () => {
     } catch { showMessage('Failed to delete', 'error'); }
   };
 
+  // Called by SlotScheduler after adding a slot — refresh ground data
+  const handleSlotRefresh = async () => {
+    await fetchGrounds();
+  };
+
   const getStatusBadge = (status) => {
     const map = {
+      pending_approval: { label: 'Pending Approval', color: 'bg-purple-400/10 text-purple-400 border border-purple-400/20' },
       advance_pending: { label: 'Advance Pending', color: 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20' },
       advance_paid: { label: 'Advance Paid', color: 'bg-blue-400/10 text-blue-400 border border-blue-400/20' },
       completed: { label: 'Completed 🎉', color: 'bg-green-400/10 text-green-400 border border-green-400/20' },
-      refunded: { label: 'Refunded', color: 'bg-gray-400/10 text-gray-600 dark:text-gray-400 border border-gray-400/20' },
+      refunded: { label: 'Refunded', color: 'bg-gray-400/10 text-gray-400 border border-gray-400/20' },
       cancelled: { label: 'Cancelled', color: 'bg-red-400/10 text-red-400 border border-red-400/20' },
     };
-    return map[status] || { label: status, color: 'bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white' };
+    return map[status] || { label: status, color: 'bg-white/10 text-white' };
   };
 
   const getSportEmoji = (sport) => {
@@ -444,7 +441,6 @@ const GroundOwnerDashboard = () => {
   }, 0);
   const totalSlots = grounds.reduce((sum, g) => sum + (g.slots?.length || 0), 0);
   const bookedSlots = grounds.reduce((sum, g) => sum + (g.slots?.filter(s => s.isBooked).length || 0), 0);
-  const totalBookings = groundBookings.length;
 
   return (
     <div className="min-h-screen bg-[#fcfcfc] dark:bg-[#060606] text-gray-900 dark:text-white" style={{ fontFamily: 'DM Sans, sans-serif' }}>
@@ -503,7 +499,7 @@ const GroundOwnerDashboard = () => {
             { label: 'My Grounds', value: grounds.length, icon: '🏟️', color: 'stat-green' },
             { label: 'Total Slots', value: totalSlots, icon: '📅', color: 'stat-blue' },
             { label: 'Slots Booked', value: bookedSlots, icon: '✅', color: 'stat-orange' },
-            { label: 'Est. Revenue', value: `₹${totalRevenue}`, icon: '💰', color: 'stat-purple' },
+            { label: 'Est. Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: '💰', color: 'stat-purple' },
           ].map((stat, i) => (
             <div key={i} className={`stat-card ${stat.color}`}>
               <div className="text-2xl mb-2">{stat.icon}</div>
@@ -519,7 +515,7 @@ const GroundOwnerDashboard = () => {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white">MY GROUNDS</h2>
-              <button onClick={() => setActiveTab('create')} className="btn-secondary text-xs py-2 px-3">
+              <button onClick={() => { setIsEditing(false); setEditingGroundId(null); setGroundForm({ name: '', sport: 'cricket', address: '', pricePerHour: '', amenities: [], coordinates: [], isSocial: false }); setActiveTab('create'); }} className="btn-secondary text-xs py-2 px-3">
                 + New Ground
               </button>
             </div>
@@ -543,7 +539,7 @@ const GroundOwnerDashboard = () => {
                 <div
                   key={ground._id}
                   onClick={() => handleSelectGround(ground)}
-                  className={`ground-card animate-cardIn cursor-pointer ${isSelected ? 'selected' : ''}`}
+                  className={`ground-card animate-cardIn ${isSelected ? 'selected' : ''}`}
                   style={{ animationDelay: `${i * 0.07}s` }}
                 >
                   <div className="flex items-start gap-3 mb-3">
@@ -559,13 +555,13 @@ const GroundOwnerDashboard = () => {
                       <p className="text-gray-600 text-xs truncate">📍 {ground.address}</p>
                     </div>
                     {isSelected && (
-                      <span className="text-green-400 text-xs font-semibold flex-shrink-0">Selected ✓</span>
+                      <span className="text-green-400 text-xs font-semibold flex-shrink-0">✓</span>
                     )}
                   </div>
 
                   <div className="flex justify-between text-xs mb-2">
                     <span className="text-gray-600">{booked}/{total} booked</span>
-                    <span className="text-green-400 font-semibold">₹{ground.pricePerHour}/hr</span>
+                    <span className="text-green-400 font-semibold">{ground.isSocial ? 'Free' : `₹${ground.pricePerHour}/hr`}</span>
                   </div>
 
                   <div className="progress-bar mb-3">
@@ -573,11 +569,21 @@ const GroundOwnerDashboard = () => {
                   </div>
 
                   <div className="flex gap-2 flex-wrap items-center">
-                    <span className="slot-pill">✅ {available} free</span>
-                    <span className="slot-pill booked">🔴 {booked} booked</span>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleEditGround(ground); }} 
-                      className="ml-auto text-xs bg-blue-400/10 text-blue-400 border border-blue-400/20 px-3 py-1 rounded-full hover:bg-blue-400/20 transition-colors flex items-center gap-1"
+                    {ground.approvalStatus === 'pending' && (
+                      <span className="text-[10px] bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 px-2 py-0.5 rounded-full font-semibold">⏳ Pending Approval</span>
+                    )}
+                    {ground.approvalStatus === 'rejected' && (
+                      <span className="text-[10px] bg-red-400/10 text-red-400 border border-red-400/20 px-2 py-0.5 rounded-full font-semibold">❌ Rejected</span>
+                    )}
+                    {ground.approvalStatus === 'approved' && (
+                      <>
+                        <span className="slot-pill">✅ {available} free</span>
+                        <span className="slot-pill booked">🔴 {booked} booked</span>
+                      </>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditGround(ground); }}
+                      className="ml-auto text-xs bg-blue-400/10 text-blue-400 border border-blue-400/20 px-3 py-1 rounded-full hover:bg-blue-400/20 transition-colors"
                     >
                       ✏️ Edit
                     </button>
@@ -592,8 +598,8 @@ const GroundOwnerDashboard = () => {
             <div className="flex gap-2 overflow-x-auto pb-1">
               {[
                 { id: 'grounds', label: '📋 Overview' },
-                { id: 'bookings', label: `📅 Bookings ${selectedGround ? `(${groundBookings.length})` : ''}` },
-                { id: 'slots', label: '➕ Add Slots' },
+                { id: 'bookings', label: `📅 Bookings${selectedGround ? ` (${groundBookings.length})` : ''}` },
+                { id: 'slots', label: '🗓️ Manage Slots' },
                 { id: 'create', label: isEditing ? '✏️ Edit Ground' : '🏟️ New Ground' },
               ].map((tab) => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -611,15 +617,15 @@ const GroundOwnerDashboard = () => {
                     <div className="glass-card animate-cardIn">
                       <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
                         <div>
-                          <h3 className="font-bebas text-2xl text-gray-900 dark:text-white flex items-center gap-2">
+                          <h3 className="font-bebas text-2xl text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                             {selectedGround.name}
-                            {selectedGround.isSocial && <span className="bg-yellow-400 text-black text-xs px-2 py-0.5 rounded font-bold tracking-wider mb-1">SOCIAL GROUND</span>}
+                            {selectedGround.isSocial && <span className="bg-yellow-400 text-black text-xs px-2 py-0.5 rounded font-bold tracking-wider">SOCIAL</span>}
                           </h3>
                           <p className="text-gray-500 text-sm">📍 {selectedGround.address}</p>
                         </div>
                         <div className="flex gap-2">
                           <button onClick={() => handleEditGround(selectedGround)} className="btn-secondary text-xs py-2">
-                            ✏️ Edit Details
+                            ✏️ Edit
                           </button>
                           <button onClick={() => handleDeleteGround(selectedGround._id)} className="btn-danger text-xs py-2">
                             🗑️ Delete
@@ -628,20 +634,33 @@ const GroundOwnerDashboard = () => {
                       </div>
 
                       <div className="revenue-card mb-4">
+                        {selectedGround.approvalStatus !== 'approved' && (
+                          <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 ${
+                            selectedGround.approvalStatus === 'pending'
+                              ? 'bg-yellow-400/10 border border-yellow-400/20 text-yellow-400'
+                              : 'bg-red-400/10 border border-red-400/20 text-red-400'
+                          }`}>
+                            {selectedGround.approvalStatus === 'pending' ? '⏳ Awaiting admin approval — ground is not visible to players yet' : `❌ Rejected${selectedGround.rejectionReason ? `: ${selectedGround.rejectionReason}` : ''}`}
+                          </div>
+                        )}
                         <p className="text-xs text-gray-600 uppercase tracking-wider mb-3">Revenue Breakdown</p>
                         <div className="flex justify-between text-sm mb-2">
                           <span className="text-gray-500">Price per Hour</span>
-                          <span className="text-gray-900 dark:text-white font-semibold">₹{selectedGround.pricePerHour}</span>
+                          <span className="text-gray-900 dark:text-white font-semibold">
+                            {selectedGround.isSocial ? 'Free (Social)' : `₹${selectedGround.pricePerHour}`}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm mb-2">
                           <span className="text-gray-500">Slots Booked</span>
-                          <span className="text-gray-900 dark:text-white font-semibold">{selectedGround.slots?.filter(s => s.isBooked).length || 0}</span>
+                          <span className="text-gray-900 dark:text-white font-semibold">
+                            {selectedGround.slots?.filter(s => s.isBooked).length || 0}
+                          </span>
                         </div>
                         <div className="w-full h-px bg-black/5 dark:bg-white/5 my-2" />
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-500">Est. Revenue</span>
                           <span className="text-green-400 font-bold">
-                            ₹{(selectedGround.slots?.filter(s => s.isBooked).length || 0) * selectedGround.pricePerHour}
+                            {selectedGround.isSocial ? '—' : `₹${((selectedGround.slots?.filter(s => s.isBooked).length || 0) * selectedGround.pricePerHour).toLocaleString('en-IN')}`}
                           </span>
                         </div>
                       </div>
@@ -651,7 +670,7 @@ const GroundOwnerDashboard = () => {
                           <p className="text-xs text-gray-600 uppercase tracking-wider mb-2">Amenities</p>
                           <div className="flex flex-wrap gap-2">
                             {selectedGround.amenities.map((a, i) => (
-                              <span key={i} className="text-xs bg-black/3 dark:bg-white/3 border border-black/7 dark:border-white/7 text-gray-500 px-3 py-1 rounded-full">✓ {a}</span>
+                              <span key={i} className="text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-500 px-3 py-1 rounded-full">✓ {a}</span>
                             ))}
                           </div>
                         </div>
@@ -659,11 +678,19 @@ const GroundOwnerDashboard = () => {
                     </div>
 
                     <div className="glass-card animate-cardIn">
-                      <p className="text-xs text-gray-600 uppercase tracking-wider mb-3">All Slots</p>
-                      <div className="flex flex-col gap-2 max-h-48 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--glass-10, rgba(255,255,255,0.1)) transparent' }}>
-                        {selectedGround.slots?.length === 0 ? (
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs text-gray-600 uppercase tracking-wider">All Slots ({selectedGround.slots?.length || 0})</p>
+                        <button onClick={() => setActiveTab('slots')} className="text-xs text-green-400 hover:underline">
+                          Manage Slots →
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-2 max-h-48 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                        {!selectedGround.slots?.length ? (
                           <p className="text-gray-600 text-sm text-center py-4">No slots added yet</p>
-                        ) : selectedGround.slots?.map((slot, i) => (
+                        ) : selectedGround.slots
+                            .slice()
+                            .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+                            .map((slot, i) => (
                           <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs ${slot.isBooked ? 'bg-red-400/5 border border-red-400/10' : 'bg-green-400/5 border border-green-400/10'}`}>
                             <span className="text-gray-600 dark:text-gray-400">📅 {slot.date} · {slot.startTime} — {slot.endTime}</span>
                             <span className={slot.isBooked ? 'text-red-400' : 'text-green-400'}>
@@ -737,59 +764,53 @@ const GroundOwnerDashboard = () => {
               </div>
             )}
 
-            {/* ADD SLOTS TAB */}
+            {/* SLOTS TAB — Visual Scheduler */}
             {activeTab === 'slots' && (
-              <div className="glass-card animate-cardIn">
-                <h3 className="font-bebas text-xl text-gray-900 dark:text-white mb-1">ADD SLOT</h3>
-                <p className="text-gray-600 text-sm mb-6">
-                  {selectedGround ? `Adding to: ${selectedGround.name}` : 'Select a ground first from the left'}
-                </p>
-                {!selectedGround ? (
-                  <div className="text-center py-10">
-                    <span className="text-4xl block mb-3">👈</span>
-                    <p className="text-gray-500 text-sm">Click a ground to select it, then add slots</p>
+              <div className="animate-cardIn">
+                {selectedGround && selectedGround.approvalStatus !== 'approved' ? (
+                  <div className="glass-card text-center py-16">
+                    <span className="text-5xl block mb-4">{selectedGround.approvalStatus === 'pending' ? '⏳' : '❌'}</span>
+                    <p className="text-gray-500 text-sm font-semibold mb-1">
+                      {selectedGround.approvalStatus === 'pending' ? 'Ground Pending Admin Approval' : 'Ground Rejected'}
+                    </p>
+                    <p className="text-gray-600 text-xs">
+                      {selectedGround.approvalStatus === 'pending'
+                        ? 'You can add slots once the admin approves your ground.'
+                        : selectedGround.rejectionReason || 'Contact admin for more information.'}
+                    </p>
                   </div>
                 ) : (
-                  <form onSubmit={handleAddSlot} className="flex flex-col gap-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="label">Date</label>
-                        <input type="date" value={slotForm.date}
-                          onChange={(e) => setSlotForm({ ...slotForm, date: e.target.value })}
-                          required className="input-field" />
-                      </div>
-                      <div>
-                        <label className="label">Start Time</label>
-                        <input type="time" value={slotForm.startTime}
-                          onChange={(e) => setSlotForm({ ...slotForm, startTime: e.target.value })}
-                          required className="input-field" />
-                      </div>
-                      <div>
-                        <label className="label">End Time</label>
-                        <input type="time" value={slotForm.endTime}
-                          onChange={(e) => setSlotForm({ ...slotForm, endTime: e.target.value })}
-                          required className="input-field" />
-                      </div>
-                    </div>
-                    <button type="submit" className="btn-primary flex items-center justify-center gap-2">
-                      ➕ Add Slot to {selectedGround.name}
-                    </button>
-                  </form>
+                  <SlotScheduler
+                    ground={selectedGround}
+                    onRefresh={handleSlotRefresh}
+                    showMessage={showMessage}
+                  />
                 )}
               </div>
             )}
 
-            {/* CREATE GROUND TAB */}
+            {/* CREATE / EDIT GROUND TAB */}
             {activeTab === 'create' && (
               <div className="glass-card animate-cardIn">
                 <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-bebas text-xl text-gray-900 dark:text-white">{isEditing ? 'EDIT GROUND DETAILS' : 'CREATE NEW GROUND'}</h3>
+                  <h3 className="font-bebas text-xl text-gray-900 dark:text-white">
+                    {isEditing ? 'EDIT GROUND DETAILS' : 'CREATE NEW GROUND'}
+                  </h3>
                   {isEditing && (
-                    <button onClick={() => { setIsEditing(false); setEditingGroundId(null); setGroundForm({ name: '', sport: 'cricket', address: '', pricePerHour: '', amenities: '', coordinates: [], isSocial: false }); setActiveTab('grounds'); }} className="text-gray-500 hover:text-red-500 text-xs transition-colors">
-                      Cancel Edit ✕
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditingGroundId(null);
+                        setGroundForm({ name: '', sport: 'cricket', address: '', pricePerHour: '', amenities: [], coordinates: [], isSocial: false });
+                        setActiveTab('grounds');
+                      }}
+                      className="text-gray-500 hover:text-red-500 text-xs transition-colors"
+                    >
+                      Cancel ✕
                     </button>
                   )}
                 </div>
+
                 <form onSubmit={handleCreateGround} className="flex flex-col gap-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -815,14 +836,26 @@ const GroundOwnerDashboard = () => {
                     </div>
                     <div>
                       <label className="label">Price per Hour (₹)</label>
-                      <input type="number" value={groundForm.pricePerHour}
+                      <input
+                        type="number"
+                        value={groundForm.pricePerHour}
                         onChange={(e) => setGroundForm({ ...groundForm, pricePerHour: e.target.value })}
-                        placeholder="500" required={!groundForm.isSocial} disabled={groundForm.isSocial} className="input-field" />
+                        placeholder="500"
+                        required={!groundForm.isSocial}
+                        disabled={groundForm.isSocial}
+                        className="input-field"
+                      />
                       <div className="mt-2 flex items-center gap-2">
-                        <input type="checkbox" id="isSocial" checked={groundForm.isSocial} 
-                          onChange={(e) => setGroundForm({ ...groundForm, isSocial: e.target.checked, pricePerHour: e.target.checked ? 0 : groundForm.pricePerHour })} 
-                          className="w-4 h-4 rounded border-gray-300 bg-black/10 dark:bg-white/10 accent-yellow-400" />
-                        <label htmlFor="isSocial" className="text-sm text-yellow-500 font-semibold cursor-pointer">Mark as Social Ground (Free)</label>
+                        <input
+                          type="checkbox"
+                          id="isSocial"
+                          checked={groundForm.isSocial}
+                          onChange={(e) => setGroundForm({ ...groundForm, isSocial: e.target.checked, pricePerHour: e.target.checked ? 0 : groundForm.pricePerHour })}
+                          className="w-4 h-4 rounded accent-yellow-400"
+                        />
+                        <label htmlFor="isSocial" className="text-sm text-yellow-500 font-semibold cursor-pointer">
+                          Mark as Social Ground (Free)
+                        </label>
                       </div>
                     </div>
                     <div>
@@ -832,34 +865,56 @@ const GroundOwnerDashboard = () => {
                         placeholder="Sector 22, Chandigarh" required className="input-field" />
                     </div>
                   </div>
-                  <div className="md:col-span-2">
+
+                  {/* Amenities */}
+                  <div>
                     <label className="label">Amenities</label>
-                    <div className="bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 flex flex-wrap gap-2 focus-within:border-green-400 focus-within:ring-1 focus-within:ring-green-400 transition-colors">
+                    <div style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12,
+                      padding: 12,
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}>
                       {groundForm.amenities.map((amenity, idx) => (
-                        <span key={idx} className="bg-green-400/10 text-green-500 border border-green-400/20 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-2">
+                        <span key={idx} style={{
+                          background: 'rgba(74,222,128,0.1)',
+                          color: '#4ade80',
+                          border: '1px solid rgba(74,222,128,0.2)',
+                          padding: '4px 10px',
+                          borderRadius: 100,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}>
                           {amenity}
-                          <button type="button" onClick={() => handleRemoveAmenity(amenity)} className="hover:text-red-400 transition-colors">✕</button>
+                          <button type="button" onClick={() => handleRemoveAmenity(amenity)}
+                            style={{ color: 'inherit', opacity: 0.6, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12 }}>
+                            ✕
+                          </button>
                         </span>
                       ))}
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={amenityInput}
                         onChange={(e) => setAmenityInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddAmenity(amenityInput);
-                          }
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAmenity(amenityInput); } }}
+                        placeholder={groundForm.amenities.length === 0 ? 'Type an amenity & hit Enter' : 'Add more...'}
+                        style={{
+                          flex: 1, minWidth: 120, background: 'transparent', outline: 'none',
+                          border: 'none', fontSize: 14, color: 'inherit', fontFamily: 'DM Sans, sans-serif',
                         }}
-                        placeholder={groundForm.amenities.length === 0 ? "Type an amenity & hit Enter" : "Add more..."}
-                        className="flex-1 min-w-[120px] bg-transparent outline-none text-sm text-gray-900 dark:text-white"
                       />
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="text-xs text-gray-500 py-1">Suggestions:</span>
-                      {PRESET_AMENITIES.map((preset, idx) => (
+                      {PRESET_AMENITIES.map((preset) => (
                         <button
-                          key={idx}
+                          key={preset}
                           type="button"
                           onClick={() => handleAddAmenity(preset)}
                           disabled={groundForm.amenities.includes(preset)}
@@ -870,19 +925,27 @@ const GroundOwnerDashboard = () => {
                       ))}
                     </div>
                   </div>
+
                   <div className="flex flex-wrap gap-3 items-center">
-                    <button type="button" onClick={handleDetectLocation} className="btn-secondary flex items-center gap-2">
-                      📍 {groundForm.coordinates.length > 0 ? 'Location Set ✅' : 'Choose Base Location on Map'}
+                    <button type="button" onClick={() => setShowMapPicker(true)} className="btn-secondary flex items-center gap-2">
+                      📍 {groundForm.coordinates.length > 0 ? 'Location Set ✅' : 'Choose Location on Map'}
                     </button>
                     <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2">
                       {loading ? (
-                        <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> {isEditing ? 'Updating...' : 'Creating...'}</>
+                        <>
+                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                          </svg>
+                          {isEditing ? 'Updating...' : 'Creating...'}
+                        </>
                       ) : (isEditing ? '💾 Save Changes' : '🏟️ Create Ground')}
                     </button>
                   </div>
                 </form>
               </div>
             )}
+
           </div>
         </div>
       </div>

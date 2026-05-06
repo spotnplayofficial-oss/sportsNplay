@@ -6,6 +6,7 @@ import {
   getAllGrounds,
   getGroundById,
   addSlots,
+  removeSlot,
   updateGround,
   deleteGround,
 } from '../controllers/groundController.js';
@@ -20,6 +21,7 @@ router.get('/nearby', protect, getNearbyGrounds);
 router.get('/all', protect, getAllGrounds);
 router.get('/:id', protect, getGroundById);
 router.post('/:id/slots', protect, authorizeRoles('ground_owner'), addSlots);
+router.delete('/:id/slots/:slotId', protect, authorizeRoles('ground_owner'), removeSlot);
 router.put('/:id', protect, authorizeRoles('ground_owner'), updateGround);
 router.delete('/:id', protect, authorizeRoles('ground_owner'), deleteGround);
 

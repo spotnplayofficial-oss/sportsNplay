@@ -50,6 +50,14 @@ const groundSchema = new mongoose.Schema(
     slots: [slotSchema],
     isSocial: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    // Admin approval
+    isApproved: { type: Boolean, default: false },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    rejectionReason: { type: String, default: '' },
   },
   { timestamps: true }
 );

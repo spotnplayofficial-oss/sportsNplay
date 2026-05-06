@@ -722,7 +722,7 @@ const handleInitialLoad = async () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="animate-fadeUp-1 mb-6">
-          <p className="text-green-400 text-xs uppercase tracking-[0.3em] mb-1">Live Map</p>
+          {/* <p className="text-green-400 text-xs uppercase tracking-[0.3em] mb-1">Live Map</p> */}
           <h1 className="font-bebas text-4xl md:text-5xl tracking-wide shimmer-text">
             FIND PLAYERS & GROUNDS
           </h1>

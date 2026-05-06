@@ -4,7 +4,7 @@ import User from '../models/User.js';
 import Booking from '../models/Booking.js';
 import Ground from '../models/Ground.js';
 
-// ── existing ──────────────────────────────────────────────
+// ── Coaches ──────────────────────────────────────────────
 
 const getAllCoaches = asyncHandler(async (req, res) => {
   const { status } = req.query;
@@ -32,13 +32,13 @@ const rejectCoach = asyncHandler(async (req, res) => {
   res.json({ message: 'Coach rejected', coach });
 });
 
-// ── expanded stats ─────────────────────────────────────────
+// ── Stats ─────────────────────────────────────────────────
 
 const getDashboardStats = asyncHandler(async (req, res) => {
   const [
     totalUsers, totalCoaches, pendingCoaches, approvedCoaches,
-    totalGrounds, socialGrounds, totalBookings,
-    pendingApprovals, completedBookings, cancelledBookings,
+    totalGrounds, socialGrounds, pendingGrounds,
+    totalBookings, pendingApprovals, completedBookings, cancelledBookings,
     playerCount, groundOwnerCount,
   ] = await Promise.all([
     User.countDocuments(),
@@ -47,6 +47,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     Coach.countDocuments({ status: 'approved' }),
     Ground.countDocuments(),
     Ground.countDocuments({ isSocial: true }),
+    Ground.countDocuments({ approvalStatus: 'pending' }),
     Booking.countDocuments(),
     Booking.countDocuments({ status: 'pending_approval' }),
     Booking.countDocuments({ status: 'completed' }),
@@ -57,13 +58,43 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 
   res.json({
     totalUsers, totalCoaches, pendingCoaches, approvedCoaches,
-    totalGrounds, socialGrounds, totalBookings,
-    pendingApprovals, completedBookings, cancelledBookings,
+    totalGrounds, socialGrounds, pendingGrounds,
+    totalBookings, pendingApprovals, completedBookings, cancelledBookings,
     playerCount, groundOwnerCount,
   });
 });
 
-// ── new: social ground booking approval ───────────────────
+// ── Ground Approvals ──────────────────────────────────────
+
+const getPendingGrounds = asyncHandler(async (req, res) => {
+  const { status = 'pending' } = req.query;
+  const grounds = await Ground.find({ approvalStatus: status })
+    .populate('owner', 'name email phone avatar')
+    .sort('-createdAt');
+  res.json(grounds);
+});
+
+const approveGround = asyncHandler(async (req, res) => {
+  const ground = await Ground.findById(req.params.id);
+  if (!ground) { res.status(404); throw new Error('Ground not found'); }
+  ground.isApproved = true;
+  ground.approvalStatus = 'approved';
+  ground.rejectionReason = '';
+  await ground.save();
+  res.json({ message: 'Ground approved ✅', ground });
+});
+
+const rejectGround = asyncHandler(async (req, res) => {
+  const ground = await Ground.findById(req.params.id);
+  if (!ground) { res.status(404); throw new Error('Ground not found'); }
+  ground.isApproved = false;
+  ground.approvalStatus = 'rejected';
+  ground.rejectionReason = req.body.reason || 'Application rejected';
+  await ground.save();
+  res.json({ message: 'Ground rejected', ground });
+});
+
+// ── Social Booking Approvals ──────────────────────────────
 
 const getPendingSocialBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ status: 'pending_approval' })
@@ -77,7 +108,6 @@ const approveSocialBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id).populate('ground');
   if (!booking) { res.status(404); throw new Error('Booking not found'); }
 
-  // Mark slot as booked in ground
   const ground = await Ground.findById(booking.ground._id);
   const slot = ground.slots.id(booking.slot);
   if (slot) {
@@ -96,12 +126,9 @@ const rejectSocialBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id);
   if (!booking) { res.status(404); throw new Error('Booking not found'); }
 
-  // Remove the slot from ground entirely
   const ground = await Ground.findById(booking.ground);
   if (ground) {
-    ground.slots = ground.slots.filter(
-      s => s._id.toString() !== booking.slot.toString()
-    );
+    ground.slots = ground.slots.filter(s => s._id.toString() !== booking.slot.toString());
     await ground.save();
   }
 
@@ -111,7 +138,7 @@ const rejectSocialBooking = asyncHandler(async (req, res) => {
   res.json({ message: 'Booking rejected', booking });
 });
 
-// ── all users (for users tab) ─────────────────────────────
+// ── Users ─────────────────────────────────────────────────
 
 const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find({}).select('-password').sort('-createdAt');
@@ -126,7 +153,7 @@ const toggleUserActive = asyncHandler(async (req, res) => {
   res.json({ message: `User ${user.isActive ? 'activated' : 'banned'}`, isActive: user.isActive });
 });
 
-// ── all bookings ──────────────────────────────────────────
+// ── All Bookings ──────────────────────────────────────────
 
 const getAllBookings = asyncHandler(async (req, res) => {
   const { status } = req.query;
@@ -141,6 +168,7 @@ const getAllBookings = asyncHandler(async (req, res) => {
 
 export {
   getAllCoaches, approveCoach, rejectCoach, getDashboardStats,
+  getPendingGrounds, approveGround, rejectGround,
   getPendingSocialBookings, approveSocialBooking, rejectSocialBooking,
   getAllUsers, toggleUserActive, getAllBookings,
 };

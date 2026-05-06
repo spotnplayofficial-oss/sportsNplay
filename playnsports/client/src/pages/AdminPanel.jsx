@@ -12,6 +12,7 @@ const SPORT_EMOJI = {
 
 const TABS = [
   { id: 'overview',  label: '📊 Overview' },
+  { id: 'grounds',   label: '🏟️ Grounds' },
   { id: 'social',    label: '✨ Social Approvals' },
   { id: 'coaches',   label: '🎓 Coaches' },
   { id: 'users',     label: '👥 Users' },
@@ -22,32 +23,34 @@ const AdminPanel = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  /* ── shared ── */
   const [activeTab, setActiveTab]   = useState('overview');
   const [message,   setMessage]     = useState('');
   const [msgType,   setMsgType]     = useState('success');
   const [loading,   setLoading]     = useState(false);
 
-  /* ── stats ── */
   const [stats, setStats] = useState(null);
 
-  /* ── coaches ── */
+  // Coaches
   const [coaches,      setCoaches]      = useState([]);
   const [coachFilter,  setCoachFilter]  = useState('pending');
-  const [rejectModal,  setRejectModal]  = useState(null);
+  const [rejectModal,  setRejectModal]  = useState(null);   // id
   const [rejectReason, setRejectReason] = useState('');
 
-  /* ── social bookings ── */
+  // Grounds
+  const [grounds,       setGrounds]       = useState([]);
+  const [groundFilter,  setGroundFilter]  = useState('pending');
+  const [groundRejectModal, setGroundRejectModal] = useState(null); // id
+  const [groundRejectReason, setGroundRejectReason] = useState('');
+
+  // Social bookings
   const [socialBookings, setSocialBookings] = useState([]);
 
-  /* ── users ── */
+  // Users
   const [users, setUsers] = useState([]);
 
-  /* ── bookings ── */
-  const [allBookings,    setAllBookings]    = useState([]);
-  const [bookingFilter,  setBookingFilter]  = useState('');
-
-  /* ════════════════════════════════════════════ */
+  // Bookings
+  const [allBookings,   setAllBookings]   = useState([]);
+  const [bookingFilter, setBookingFilter] = useState('');
 
   useEffect(() => {
     if (user?.role !== 'admin') { navigate('/'); return; }
@@ -56,12 +59,12 @@ const AdminPanel = () => {
 
   useEffect(() => {
     if (activeTab === 'coaches')  fetchCoaches();
+    if (activeTab === 'grounds')  fetchGrounds();
     if (activeTab === 'social')   fetchSocialBookings();
     if (activeTab === 'users')    fetchUsers();
     if (activeTab === 'bookings') fetchAllBookings();
-  }, [activeTab, coachFilter, bookingFilter]);
+  }, [activeTab, coachFilter, groundFilter, bookingFilter]);
 
-  /* ── fetchers ── */
   const fetchStats = async () => {
     try { const { data } = await API.get('/admin/stats'); setStats(data); } catch {}
   };
@@ -69,22 +72,25 @@ const AdminPanel = () => {
   const fetchCoaches = async () => {
     setLoading(true);
     try { const { data } = await API.get(`/admin/coaches?status=${coachFilter}`); setCoaches(data); }
-    catch { setCoaches([]); }
-    finally { setLoading(false); }
+    catch { setCoaches([]); } finally { setLoading(false); }
+  };
+
+  const fetchGrounds = async () => {
+    setLoading(true);
+    try { const { data } = await API.get(`/admin/grounds?status=${groundFilter}`); setGrounds(data); }
+    catch { setGrounds([]); } finally { setLoading(false); }
   };
 
   const fetchSocialBookings = async () => {
     setLoading(true);
     try { const { data } = await API.get('/admin/social-bookings/pending'); setSocialBookings(data); }
-    catch { setSocialBookings([]); }
-    finally { setLoading(false); }
+    catch { setSocialBookings([]); } finally { setLoading(false); }
   };
 
   const fetchUsers = async () => {
     setLoading(true);
     try { const { data } = await API.get('/admin/users'); setUsers(data); }
-    catch { setUsers([]); }
-    finally { setLoading(false); }
+    catch { setUsers([]); } finally { setLoading(false); }
   };
 
   const fetchAllBookings = async () => {
@@ -93,22 +99,19 @@ const AdminPanel = () => {
       const q = bookingFilter ? `?status=${bookingFilter}` : '';
       const { data } = await API.get(`/admin/bookings${q}`);
       setAllBookings(data);
-    }
-    catch { setAllBookings([]); }
-    finally { setLoading(false); }
+    } catch { setAllBookings([]); } finally { setLoading(false); }
   };
 
-  /* ── actions ── */
   const flash = (msg, type = 'success') => {
     setMessage(msg); setMsgType(type);
     setTimeout(() => setMessage(''), 3000);
   };
 
+  // Coach actions
   const handleApproveCoach = async (id) => {
     try { await API.patch(`/admin/coaches/${id}/approve`); flash('Coach approved ✅'); fetchCoaches(); fetchStats(); }
     catch { flash('Failed', 'error'); }
   };
-
   const handleRejectCoach = async () => {
     try {
       await API.patch(`/admin/coaches/${rejectModal}/reject`, { reason: rejectReason });
@@ -117,16 +120,30 @@ const AdminPanel = () => {
     } catch { flash('Failed', 'error'); }
   };
 
+  // Ground actions
+  const handleApproveGround = async (id) => {
+    try { await API.patch(`/admin/grounds/${id}/approve`); flash('Ground approved ✅'); fetchGrounds(); fetchStats(); }
+    catch { flash('Failed', 'error'); }
+  };
+  const handleRejectGround = async () => {
+    try {
+      await API.patch(`/admin/grounds/${groundRejectModal}/reject`, { reason: groundRejectReason });
+      flash('Ground rejected'); setGroundRejectModal(null); setGroundRejectReason('');
+      fetchGrounds(); fetchStats();
+    } catch { flash('Failed', 'error'); }
+  };
+
+  // Social booking actions
   const handleApproveSocial = async (id) => {
     try { await API.patch(`/admin/social-bookings/${id}/approve`); flash('Booking approved ✅'); fetchSocialBookings(); fetchStats(); }
     catch { flash('Failed', 'error'); }
   };
-
   const handleRejectSocial = async (id) => {
     try { await API.patch(`/admin/social-bookings/${id}/reject`); flash('Booking rejected'); fetchSocialBookings(); fetchStats(); }
     catch { flash('Failed', 'error'); }
   };
 
+  // User actions
   const handleToggleUser = async (id) => {
     try {
       const { data } = await API.patch(`/admin/users/${id}/toggle-active`);
@@ -134,7 +151,7 @@ const AdminPanel = () => {
     } catch { flash('Failed', 'error'); }
   };
 
-  /* ── helpers ── */
+  // Helpers
   const statusColor = (s) => {
     const map = {
       pending_approval: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20',
@@ -157,17 +174,22 @@ const AdminPanel = () => {
     return map[r] || 'bg-white/5 text-gray-400';
   };
 
-  /* ════════════════════════════════════════════════════════ */
+  const approvalColor = (s) => {
+    if (s === 'approved') return 'bg-green-400/10 text-green-400 border-green-400/20';
+    if (s === 'rejected') return 'bg-red-400/10 text-red-400 border-red-400/20';
+    return 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20';
+  };
+
   return (
     <div className="min-h-screen bg-[#fcfcfc] dark:bg-[#060606] text-gray-900 dark:text-white" style={{ fontFamily: 'DM Sans, sans-serif' }}>
 
-      {/* inject styles */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         .font-bebas { font-family: 'Bebas Neue', cursive !important; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes cardIn { from{opacity:0;transform:translateY(12px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         .anim-fadeUp { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
         .anim-slideIn { animation: slideIn 0.3s ease forwards; }
         .anim-cardIn  { animation: cardIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; opacity:0; }
@@ -175,8 +197,6 @@ const AdminPanel = () => {
         .tab-inactive { background:transparent; color:#6b7280; border:1px solid transparent; }
         .tab-inactive:hover { border-color:rgba(255,255,255,0.08); color:#9ca3af; }
         .card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:16px; }
-        .dark .card { background:rgba(255,255,255,0.02); }
-        .light .card { background:rgba(0,0,0,0.02); border-color:rgba(0,0,0,0.06); }
         .stat-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:20px; transition:all 0.3s; position:relative; overflow:hidden; }
         .stat-card:hover { transform:translateY(-2px); border-color:rgba(74,222,128,0.15); }
         .badge { font-size:11px; font-weight:600; padding:3px 10px; border-radius:100px; border:1px solid; }
@@ -185,6 +205,7 @@ const AdminPanel = () => {
         .grid-dots { background-image:radial-gradient(circle,rgba(255,255,255,0.04) 1px,transparent 1px); background-size:28px 28px; }
         @keyframes shimmer { from{background-position:-200% center} to{background-position:200% center} }
         .shimmer-text { background:linear-gradient(90deg,#4ade80,#22c55e,#86efac,#4ade80); background-size:200% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:shimmer 3s linear infinite; }
+        .animate-spin { animation: spin 1s linear infinite; }
       `}</style>
 
       <div className="fixed inset-0 grid-dots pointer-events-none opacity-20" />
@@ -199,60 +220,62 @@ const AdminPanel = () => {
         }`}>{msgType === 'success' ? '✅' : '⚠️'} {message}</div>
       )}
 
-      {/* Reject Coach Modal */}
+      {/* Coach reject modal */}
       {rejectModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-          <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-white font-bold text-lg mb-4">Reject Coach Application</h3>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Reason for rejection..."
-              rows={3}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm outline-none resize-none mb-4 focus:border-red-400/40"
-            />
-            <div className="flex gap-3">
-              <button onClick={() => setRejectModal(null)} className="flex-1 bg-white/5 border border-white/10 text-gray-400 rounded-xl py-3 text-sm font-semibold hover:bg-white/10 transition-all">Cancel</button>
-              <button onClick={handleRejectCoach} className="flex-1 bg-red-400/15 border border-red-400/25 text-red-400 rounded-xl py-3 text-sm font-semibold hover:bg-red-400/25 transition-all">Reject</button>
-            </div>
-          </div>
-        </div>
+        <RejectModal
+          title="Reject Coach Application"
+          value={rejectReason}
+          onChange={setRejectReason}
+          onCancel={() => { setRejectModal(null); setRejectReason(''); }}
+          onConfirm={handleRejectCoach}
+        />
+      )}
+
+      {/* Ground reject modal */}
+      {groundRejectModal && (
+        <RejectModal
+          title="Reject Ground Application"
+          value={groundRejectReason}
+          onChange={setGroundRejectReason}
+          onCancel={() => { setGroundRejectModal(null); setGroundRejectReason(''); }}
+          onConfirm={handleRejectGround}
+        />
       )}
 
       <div className="max-w-6xl mx-auto px-4 py-10">
 
         {/* Header */}
         <div className="anim-fadeUp mb-8">
-          <h1 className="font-bebas text-5xl md:text-6xl tracking-wide shimmer-text">ADMIN's DASHBOARD</h1>
+          <h1 className="font-bebas text-5xl md:text-6xl tracking-wide shimmer-text">ADMIN DASHBOARD</h1>
         </div>
 
-        {/* ── Stats Grid ── */}
+        {/* Stats */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8 anim-fadeUp">
             {[
-              { label: 'Total Users',     value: stats.totalUsers,       color: '#4ade80', icon: '👥' },
-              { label: 'Players',         value: stats.playerCount,      color: '#4ade80', icon: '🏃' },
-              { label: 'Ground Owners',   value: stats.groundOwnerCount, color: '#60a5fa', icon: '🏟️' },
-              { label: 'Total Grounds',   value: stats.totalGrounds,     color: '#a78bfa', icon: '📍' },
-              { label: 'Social Grounds',  value: stats.socialGrounds,    color: '#fbbf24', icon: '✨' },
-              { label: 'Total Bookings',  value: stats.totalBookings,    color: '#34d399', icon: '📅' },
-              { label: 'Pending Approvals', value: stats.pendingApprovals, color: '#f97316', icon: '⏳' },
-              { label: 'Completed',       value: stats.completedBookings,color: '#4ade80', icon: '✅' },
-              { label: 'Cancelled',       value: stats.cancelledBookings,color: '#f87171', icon: '❌' },
-              { label: 'Pending Coaches', value: stats.pendingCoaches,   color: '#fbbf24', icon: '🎓' },
-              { label: 'Approved Coaches',value: stats.approvedCoaches,  color: '#60a5fa', icon: '🏅' },
-              { label: 'Total Coaches',   value: stats.totalCoaches,     color: '#a78bfa', icon: '👨‍🏫' },
+              { label: 'Total Users',      value: stats.totalUsers,       color: '#4ade80', icon: '👥' },
+              { label: 'Players',          value: stats.playerCount,      color: '#4ade80', icon: '🏃' },
+              { label: 'Ground Owners',    value: stats.groundOwnerCount, color: '#60a5fa', icon: '🏟️' },
+              { label: 'Total Grounds',    value: stats.totalGrounds,     color: '#a78bfa', icon: '📍' },
+              { label: 'Pending Grounds',  value: stats.pendingGrounds,   color: '#f97316', icon: '⏳' },
+              { label: 'Social Grounds',   value: stats.socialGrounds,    color: '#fbbf24', icon: '✨' },
+              { label: 'Total Bookings',   value: stats.totalBookings,    color: '#34d399', icon: '📅' },
+              { label: 'Social Pending',   value: stats.pendingApprovals, color: '#f97316', icon: '🕐' },
+              { label: 'Completed',        value: stats.completedBookings,color: '#4ade80', icon: '✅' },
+              { label: 'Cancelled',        value: stats.cancelledBookings,color: '#f87171', icon: '❌' },
+              { label: 'Pending Coaches',  value: stats.pendingCoaches,   color: '#fbbf24', icon: '🎓' },
+              { label: 'Total Coaches',    value: stats.totalCoaches,     color: '#a78bfa', icon: '👨‍🏫' },
             ].map((s, i) => (
-              <div key={i} className="stat-card" style={{ animationDelay: `${i * 0.04}s` }}>
+              <div key={i} className="stat-card">
                 <div className="text-xl mb-1">{s.icon}</div>
-                <div className="font-bebas text-3xl" style={{ color: s.color }}>{s.value}</div>
+                <div className="font-bebas text-3xl" style={{ color: s.color }}>{s.value ?? 0}</div>
                 <div className="text-gray-500 text-[10px] uppercase tracking-wider mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
         )}
 
-        {/* ── Tabs ── */}
+        {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1 anim-fadeUp">
           {TABS.map(t => (
             <button
@@ -261,6 +284,9 @@ const AdminPanel = () => {
               className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === t.id ? 'tab-active' : 'tab-inactive'}`}
             >
               {t.label}
+              {t.id === 'grounds' && stats?.pendingGrounds > 0 && (
+                <span className="ml-2 bg-orange-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingGrounds}</span>
+              )}
               {t.id === 'social' && stats?.pendingApprovals > 0 && (
                 <span className="ml-2 bg-orange-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingApprovals}</span>
               )}
@@ -271,20 +297,16 @@ const AdminPanel = () => {
           ))}
         </div>
 
-        {/* ════════════════ OVERVIEW TAB ════════════════ */}
+        {/* ── OVERVIEW ── */}
         {activeTab === 'overview' && (
           <div className="anim-cardIn">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Quick action cards */}
               {[
-                { label: 'Social Booking Approvals', count: stats?.pendingApprovals, color: '#f97316', icon: '✨', tab: 'social', desc: 'pending approval requests' },
+                { label: 'Ground Approvals',         count: stats?.pendingGrounds,   color: '#f97316', icon: '🏟️', tab: 'grounds', desc: 'grounds awaiting review' },
+                { label: 'Social Booking Approvals', count: stats?.pendingApprovals, color: '#f97316', icon: '✨', tab: 'social',  desc: 'pending approval requests' },
                 { label: 'Coach Applications',       count: stats?.pendingCoaches,   color: '#fbbf24', icon: '🎓', tab: 'coaches', desc: 'waiting for review' },
               ].map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveTab(item.tab)}
-                  className="card text-left hover:border-green-400/20 transition-all group"
-                >
+                <button key={i} onClick={() => setActiveTab(item.tab)} className="card text-left hover:border-green-400/20 transition-all group">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ background: `${item.color}18` }}>
                       {item.icon}
@@ -300,7 +322,93 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* ════════════════ SOCIAL APPROVALS TAB ════════════════ */}
+        {/* ── GROUNDS TAB ── */}
+        {activeTab === 'grounds' && (
+          <div>
+            <div className="flex items-center gap-3 mb-5 flex-wrap">
+              <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white">GROUND APPLICATIONS</h2>
+              <div className="flex gap-2 ml-auto">
+                {['pending', 'approved', 'rejected'].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setGroundFilter(f)}
+                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${groundFilter === f ? 'tab-active' : 'tab-inactive'}`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+              <button onClick={fetchGrounds} className="text-xs text-gray-500 hover:text-green-400 transition-colors">↻</button>
+            </div>
+
+            {loading ? <Spinner /> : grounds.length === 0 ? (
+              <EmptyState icon="🏟️" text={`No ${groundFilter} ground applications`} />
+            ) : (
+              <div className="flex flex-col gap-3">
+                {grounds.map((ground, i) => (
+                  <div key={ground._id} className="card anim-cardIn" style={{ animationDelay: `${i * 0.05}s` }}>
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                      {/* Sport icon */}
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                        style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)' }}>
+                        {SPORT_EMOJI[ground.sport] || '🏆'}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="text-gray-900 dark:text-white font-semibold">{ground.name}</p>
+                          {ground.isSocial && <span className="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold">SOCIAL</span>}
+                          <span className={`badge ${approvalColor(ground.approvalStatus)} capitalize`}>{ground.approvalStatus}</span>
+                        </div>
+                        <p className="text-gray-500 text-xs mb-1">📍 {ground.address}</p>
+                        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                          <span className="capitalize">{ground.sport}</span>
+                          <span>{ground.isSocial ? 'Free (Social)' : `₹${ground.pricePerHour}/hr`}</span>
+                          {ground.amenities?.length > 0 && <span>{ground.amenities.slice(0, 3).join(', ')}{ground.amenities.length > 3 ? ` +${ground.amenities.length - 3}` : ''}</span>}
+                        </div>
+                        {/* Owner */}
+                        <div className="flex items-center gap-2 mt-2">
+                          {ground.owner?.avatar
+                            ? <img src={ground.owner.avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                            : <div className="w-6 h-6 rounded-full bg-green-400/10 border border-green-400/20 flex items-center justify-center text-green-400 text-xs font-bold">{ground.owner?.name?.charAt(0)}</div>
+                          }
+                          <p className="text-gray-500 text-xs">{ground.owner?.name} · {ground.owner?.email}</p>
+                        </div>
+                        {ground.rejectionReason && (
+                          <p className="text-red-400 text-xs mt-1.5">Rejection reason: {ground.rejectionReason}</p>
+                        )}
+                        <p className="text-gray-600 text-xs mt-1">Submitted {new Date(ground.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      </div>
+
+                      {/* Actions */}
+                      {groundFilter === 'pending' && (
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleApproveGround(ground._id)}
+                            className="bg-green-400/15 border border-green-400/25 text-green-400 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-400/25 transition-all"
+                          >✅ Approve</button>
+                          <button
+                            onClick={() => setGroundRejectModal(ground._id)}
+                            className="bg-red-400/10 border border-red-400/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-400/20 transition-all"
+                          >❌ Reject</button>
+                        </div>
+                      )}
+                      {groundFilter === 'rejected' && (
+                        <button
+                          onClick={() => handleApproveGround(ground._id)}
+                          className="bg-green-400/15 border border-green-400/25 text-green-400 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-400/25 transition-all flex-shrink-0"
+                        >↩ Re-approve</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── SOCIAL APPROVALS ── */}
         {activeTab === 'social' && (
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -320,7 +428,6 @@ const AdminPanel = () => {
                 {socialBookings.map((b, i) => (
                   <div key={b._id} className="card anim-cardIn" style={{ animationDelay: `${i * 0.05}s` }}>
                     <div className="flex flex-col md:flex-row md:items-center gap-4">
-                      {/* User */}
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 font-bold flex-shrink-0">
                           {b.player?.avatar
@@ -332,35 +439,21 @@ const AdminPanel = () => {
                           <p className="text-gray-500 text-xs">{b.player?.email} · {b.player?.phone}</p>
                         </div>
                       </div>
-
-                      {/* Ground info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-gray-900 dark:text-white font-semibold text-sm flex items-center gap-2">
                           {b.ground?.name}
                           <span className="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold">SOCIAL</span>
                         </p>
                         <p className="text-gray-500 text-xs">📍 {b.ground?.address}</p>
-                        <p className="text-gray-400 text-xs mt-0.5">
-                          📅 {b.date} · ⏰ {b.startTime} — {b.endTime}
-                        </p>
+                        <p className="text-gray-400 text-xs mt-0.5">📅 {b.date} · ⏰ {b.startTime} — {b.endTime}</p>
                       </div>
-
-                      {/* Requested at */}
                       <div className="text-right flex-shrink-0">
                         <p className="text-gray-500 text-xs">Requested</p>
                         <p className="text-gray-400 text-xs">{new Date(b.createdAt).toLocaleDateString()} {new Date(b.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
-
-                      {/* Actions */}
                       <div className="flex gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => handleApproveSocial(b._id)}
-                          className="bg-green-400/15 border border-green-400/25 text-green-400 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-400/25 transition-all"
-                        >✅ Approve</button>
-                        <button
-                          onClick={() => handleRejectSocial(b._id)}
-                          className="bg-red-400/10 border border-red-400/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-400/20 transition-all"
-                        >❌ Reject</button>
+                        <button onClick={() => handleApproveSocial(b._id)} className="bg-green-400/15 border border-green-400/25 text-green-400 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-400/25 transition-all">✅ Approve</button>
+                        <button onClick={() => handleRejectSocial(b._id)} className="bg-red-400/10 border border-red-400/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-400/20 transition-all">❌ Reject</button>
                       </div>
                     </div>
                   </div>
@@ -370,22 +463,17 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* ════════════════ COACHES TAB ════════════════ */}
+        {/* ── COACHES ── */}
         {activeTab === 'coaches' && (
           <div>
-            {/* Sub-filter */}
             <div className="flex gap-2 mb-5">
               {['pending', 'approved', 'rejected'].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setCoachFilter(f)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${coachFilter === f ? 'tab-active' : 'tab-inactive'}`}
-                >
+                <button key={f} onClick={() => setCoachFilter(f)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${coachFilter === f ? 'tab-active' : 'tab-inactive'}`}>
                   {f} Coaches
                 </button>
               ))}
             </div>
-
             {loading ? <Spinner /> : coaches.length === 0 ? (
               <EmptyState icon="🎓" text={`No ${coachFilter} coaches`} />
             ) : (
@@ -422,14 +510,13 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* ════════════════ USERS TAB ════════════════ */}
+        {/* ── USERS ── */}
         {activeTab === 'users' && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white">ALL USERS <span className="text-gray-500 text-base font-sans ml-2">({users.length})</span></h2>
               <button onClick={fetchUsers} className="text-xs text-gray-500 hover:text-green-400 transition-colors">↻ Refresh</button>
             </div>
-
             {loading ? <Spinner /> : users.length === 0 ? (
               <EmptyState icon="👥" text="No users found" />
             ) : (
@@ -443,21 +530,19 @@ const AdminPanel = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-gray-900 dark:text-white font-semibold text-sm">{u.name}</p>
-                        <span className={`badge ${roleColor(u.role)} capitalize`}>{u.role}</span>
+                        <span className={`badge ${roleColor(u.role)} capitalize`}>{u.role?.replace('_', ' ')}</span>
                         {!u.isActive && <span className="badge bg-red-400/10 text-red-400 border-red-400/20">Banned</span>}
                       </div>
                       <p className="text-gray-500 text-xs">{u.email} · {u.phone || 'No phone'}</p>
                       <p className="text-gray-600 text-xs">Joined {new Date(u.createdAt).toLocaleDateString()}</p>
                     </div>
                     {u.role !== 'admin' && (
-                      <button
-                        onClick={() => handleToggleUser(u._id)}
+                      <button onClick={() => handleToggleUser(u._id)}
                         className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                           u.isActive
                             ? 'bg-red-400/10 border border-red-400/20 text-red-400 hover:bg-red-400/20'
                             : 'bg-green-400/10 border border-green-400/20 text-green-400 hover:bg-green-400/20'
-                        }`}
-                      >
+                        }`}>
                         {u.isActive ? '🚫 Ban' : '✅ Unban'}
                       </button>
                     )}
@@ -468,16 +553,12 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* ════════════════ BOOKINGS TAB ════════════════ */}
+        {/* ── BOOKINGS ── */}
         {activeTab === 'bookings' && (
           <div>
             <div className="flex items-center gap-3 mb-5 flex-wrap">
               <h2 className="font-bebas text-2xl tracking-wide text-gray-900 dark:text-white">ALL BOOKINGS</h2>
-              <select
-                value={bookingFilter}
-                onChange={(e) => setBookingFilter(e.target.value)}
-                className="select-field ml-auto"
-              >
+              <select value={bookingFilter} onChange={(e) => setBookingFilter(e.target.value)} className="select-field ml-auto">
                 <option value="">All Statuses</option>
                 <option value="pending_approval">Pending Approval</option>
                 <option value="advance_pending">Advance Pending</option>
@@ -488,7 +569,6 @@ const AdminPanel = () => {
               </select>
               <button onClick={fetchAllBookings} className="text-xs text-gray-500 hover:text-green-400 transition-colors">↻ Refresh</button>
             </div>
-
             {loading ? <Spinner /> : allBookings.length === 0 ? (
               <EmptyState icon="📅" text="No bookings found" />
             ) : (
@@ -530,7 +610,26 @@ const AdminPanel = () => {
   );
 };
 
-/* ── tiny helpers ── */
+/* ── Shared Reject Modal ── */
+const RejectModal = ({ title, value, onChange, onCancel, onConfirm }) => (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+    <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+      <h3 className="text-white font-bold text-lg mb-4">{title}</h3>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Reason for rejection..."
+        rows={3}
+        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm outline-none resize-none mb-4 focus:border-red-400/40"
+      />
+      <div className="flex gap-3">
+        <button onClick={onCancel} className="flex-1 bg-white/5 border border-white/10 text-gray-400 rounded-xl py-3 text-sm font-semibold hover:bg-white/10 transition-all">Cancel</button>
+        <button onClick={onConfirm} className="flex-1 bg-red-400/15 border border-red-400/25 text-red-400 rounded-xl py-3 text-sm font-semibold hover:bg-red-400/25 transition-all">Reject</button>
+      </div>
+    </div>
+  </div>
+);
+
 const Spinner = () => (
   <div className="flex justify-center py-16">
     <div className="w-10 h-10 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />

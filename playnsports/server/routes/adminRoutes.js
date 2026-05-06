@@ -1,31 +1,39 @@
 import express from 'express';
-import adminProtect from '../middleware/adminMiddleware.js';
 import {
   getAllCoaches, approveCoach, rejectCoach, getDashboardStats,
+  getPendingGrounds, approveGround, rejectGround,
   getPendingSocialBookings, approveSocialBooking, rejectSocialBooking,
   getAllUsers, toggleUserActive, getAllBookings,
 } from '../controllers/adminController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import { authorizeRoles } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
-// stats
-router.get('/stats', adminProtect, getDashboardStats);
+const admin = [protect, authorizeRoles('admin')];
 
-// coaches
-router.get('/coaches', adminProtect, getAllCoaches);
-router.patch('/coaches/:id/approve', adminProtect, approveCoach);
-router.patch('/coaches/:id/reject', adminProtect, rejectCoach);
+router.get('/stats', ...admin, getDashboardStats);
 
-// social booking approvals
-router.get('/social-bookings/pending', adminProtect, getPendingSocialBookings);
-router.patch('/social-bookings/:id/approve', adminProtect, approveSocialBooking);
-router.patch('/social-bookings/:id/reject', adminProtect, rejectSocialBooking);
+// Coaches
+router.get('/coaches', ...admin, getAllCoaches);
+router.patch('/coaches/:id/approve', ...admin, approveCoach);
+router.patch('/coaches/:id/reject', ...admin, rejectCoach);
 
-// users
-router.get('/users', adminProtect, getAllUsers);
-router.patch('/users/:id/toggle-active', adminProtect, toggleUserActive);
+// Grounds approval
+router.get('/grounds', ...admin, getPendingGrounds);
+router.patch('/grounds/:id/approve', ...admin, approveGround);
+router.patch('/grounds/:id/reject', ...admin, rejectGround);
 
-// bookings
-router.get('/bookings', adminProtect, getAllBookings);
+// Social bookings
+router.get('/social-bookings/pending', ...admin, getPendingSocialBookings);
+router.patch('/social-bookings/:id/approve', ...admin, approveSocialBooking);
+router.patch('/social-bookings/:id/reject', ...admin, rejectSocialBooking);
+
+// Users
+router.get('/users', ...admin, getAllUsers);
+router.patch('/users/:id/toggle-active', ...admin, toggleUserActive);
+
+// Bookings
+router.get('/bookings', ...admin, getAllBookings);
 
 export default router;

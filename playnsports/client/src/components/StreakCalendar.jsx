@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
 import API from '../api/axios';
+import { Flame, Star, Trophy, CalendarDays, ChevronLeft, ChevronRight, Moon } from 'lucide-react';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+];
 
 const StreakCalendar = () => {
   const [streak, setStreak] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStreak();
-  }, []);
+  const realToday = new Date();
+  const [viewYear,  setViewYear]  = useState(realToday.getFullYear());
+  const [viewMonth, setViewMonth] = useState(realToday.getMonth());
+
+  useEffect(() => { fetchStreak(); }, []);
 
   const fetchStreak = async () => {
     try {
@@ -23,31 +29,48 @@ const StreakCalendar = () => {
     }
   };
 
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const todayStr = today.toISOString().split('T')[0];
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
-  const blanks = Array(firstDay).fill(null);
-  const dayNums = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
+  const todayStr = realToday.toISOString().split('T')[0];
   const pad = (n) => String(n).padStart(2, '0');
-  const toDateStr = (day) => `${year}-${pad(month + 1)}-${pad(day)}`;
+  const toDateStr = (day) => `${viewYear}-${pad(viewMonth + 1)}-${pad(day)}`;
 
-  const getDayState = (day) => {
-    const d = toDateStr(day);
-    const isBooked = streak?.bookedDays?.includes(d);
-    const isLogin = streak?.activeDays?.includes(d);
-    const isToday = d === todayStr;
-    const isFuture = d > todayStr;
-    return { isBooked, isLogin, isToday, isFuture, d };
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDay    = new Date(viewYear, viewMonth, 1).getDay();
+  const blanks      = Array(firstDay).fill(null);
+  const dayNums     = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    const now = realToday;
+    if (viewYear > now.getFullYear() || (viewYear === now.getFullYear() && viewMonth >= now.getMonth())) return;
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
   };
 
+  const isAtCurrentMonth =
+    viewYear === realToday.getFullYear() && viewMonth === realToday.getMonth();
+
+  const getDayState = (day) => {
+    const d        = toDateStr(day);
+    const isBooked = streak?.bookedDays?.includes(d);
+    const isLogin  = streak?.activeDays?.includes(d);
+    const isToday  = d === todayStr;
+    const isFuture = d > todayStr;
+    return { isBooked, isLogin, isToday, isFuture };
+  };
+
+  /* ── Loading ── */
   if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
-      <div style={{ width: 28, height: 28, border: '2px solid rgba(74,222,128,0.2)', borderTop: '2px solid #4ade80', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+    <div style={{ display:'flex', justifyContent:'center', padding:'40px 0' }}>
+      <div style={{
+        width:32, height:32,
+        border:'2px solid rgba(74,222,128,0.2)',
+        borderTop:'2px solid #4ade80',
+        borderRadius:'50%',
+        animation:'sc-spin 1s linear infinite',
+      }} />
     </div>
   );
 
@@ -56,156 +79,255 @@ const StreakCalendar = () => {
   return (
     <>
       <style>{`
-        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
-        @keyframes shimmer { from{background-position:-200% center} to{background-position:200% center} }
+        @keyframes sc-spin   { to { transform: rotate(360deg); } }
+        @keyframes sc-pop    { from{transform:scale(0.6);opacity:0} to{transform:scale(1);opacity:1} }
+        @keyframes sc-fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-        .streak-day {
-          aspect-ratio: 1;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 13px;
-          font-weight: 600;
-          position: relative;
-          transition: all 0.2s;
-          cursor: default;
-          flex-direction: column;
-          gap: 1px;
-        }
-        .streak-day:hover { transform: scale(1.12); z-index: 2; }
+        .sc-wrap { display:flex; flex-direction:column; gap:24px; animation: sc-fadein 0.4s ease forwards; }
 
-        .day-future {
-          background: rgba(255,255,255,0.02);
-          color: rgba(255,255,255,0.12);
-          border: 1px solid transparent;
+        /* ── stat pills ── */
+        .sc-pills { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        .sc-pill {
+          display:flex; flex-direction:column; align-items:center; justify-content:center;
+          gap:6px; padding:16px 8px; border-radius:16px;
+          background:rgba(255,255,255,0.03);
+          border:1px solid rgba(255,255,255,0.08);
+          transition:all 0.2s;
         }
-        .day-empty {
-          background: rgba(255,255,255,0.02);
-          color: rgba(255,255,255,0.15);
-          border: 1px solid rgba(255,255,255,0.04);
+        .sc-pill:hover { transform:translateY(-2px); border-color:rgba(74,222,128,0.25); }
+        .light .sc-pill {
+          background:rgba(0,0,0,0.04);
+          border-color:rgba(0,0,0,0.12);
         }
-        .day-login {
-          background: rgba(74,222,128,0.1);
-          color: #4ade80;
-          border: 1px solid rgba(74,222,128,0.2);
+        .sc-pill-val {
+          font-family:'Bebas Neue',cursive;
+          font-size:32px;
+          line-height:1;
         }
-        .day-booked {
-          background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.1));
-          color: #fbbf24;
-          border: 1px solid rgba(251,191,36,0.3);
-          box-shadow: 0 0 12px rgba(251,191,36,0.1);
+        .sc-pill-label {
+          font-size:10px;
+          text-transform:uppercase;
+          letter-spacing:0.1em;
+          color:#6b7280;
+          text-align:center;
         }
-        .day-today-base {
-          box-shadow: 0 0 0 2px rgba(74,222,128,0.6), 0 0 16px rgba(74,222,128,0.2);
-        }
-        .day-today-booked {
-          box-shadow: 0 0 0 2px rgba(251,191,36,0.8), 0 0 20px rgba(251,191,36,0.25);
-        }
+        .light .sc-pill-label { color:#6b7280; }
 
-        .streak-icon { font-size: 14px; line-height: 1; animation: popIn 0.3s ease forwards; }
-
-        .stat-pill {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 16px;
-          padding: 14px 10px;
-          flex: 1;
-          gap: 4px;
-          transition: all 0.2s;
+        /* ── today banner ── */
+        .sc-banner {
+          display:flex; align-items:center; gap:12px;
+          padding:14px 18px; border-radius:14px;
         }
-        .stat-pill:hover { border-color: rgba(74,222,128,0.2); background: rgba(74,222,128,0.04); }
+        .sc-banner-title { font-size:14px; font-weight:700; margin-bottom:2px; }
+        .sc-banner-sub   { font-size:11px; color:#6b7280; }
+        .light .sc-banner-sub { color:#6b7280; }
 
-        .legend-dot {
-          width: 10px; height: 10px; border-radius: 4px; flex-shrink: 0;
+        /* ── nav ── */
+        .sc-nav {
+          display:flex; align-items:center; justify-content:space-between;
+        }
+        .sc-nav-btn {
+          width:34px; height:34px; border-radius:10px; border:none; cursor:pointer;
+          display:flex; align-items:center; justify-content:center;
+          background:rgba(255,255,255,0.05);
+          color:#9ca3af;
+          transition:all 0.2s;
+        }
+        .sc-nav-btn:hover:not(:disabled) { background:rgba(74,222,128,0.1); color:#4ade80; }
+        .sc-nav-btn:disabled { opacity:0.25; cursor:not-allowed; }
+        .light .sc-nav-btn {
+          background:rgba(0,0,0,0.07);
+          color:#374151;
+        }
+        .light .sc-nav-btn:hover:not(:disabled) {
+          background:rgba(22,163,74,0.12);
+          color:#16a34a;
         }
 
-        .shimmer-streak {
-          background: linear-gradient(90deg,#fbbf24,#f59e0b,#fde68a,#fbbf24);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: shimmer 2s linear infinite;
+        /* Month label — critical fix for light mode */
+        .sc-month-label {
+          font-family:'Bebas Neue',cursive;
+          font-size:20px;
+          letter-spacing:0.08em;
+          color:#f1f5f9;           /* bright in dark */
         }
+        .light .sc-month-label {
+          color:#111827 !important; /* very dark in light */
+        }
+
+        /* ── legend ── */
+        .sc-legend { display:flex; gap:14px; align-items:center; }
+        .sc-legend-dot { width:10px; height:10px; border-radius:4px; }
+        .sc-legend-label { font-size:11px; color:#6b7280; }
+        .light .sc-legend-label { color:#4b5563; }
+
+        /* ── grid ── */
+        .sc-grid {
+          display:grid;
+          grid-template-columns:repeat(7,1fr);
+          gap:5px;
+        }
+        .sc-day-label {
+          text-align:center;
+          font-size:11px;
+          font-weight:700;
+          letter-spacing:0.06em;
+          padding-bottom:6px;
+          color:#6b7280;           /* visible in dark */
+        }
+        .light .sc-day-label {
+          color:#374151;           /* dark in light */
+        }
+
+        /* ── day cells ── */
+        .sc-day {
+          aspect-ratio:1;
+          border-radius:10px;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          gap:2px;
+          transition:all 0.18s;
+          cursor:default;
+          position:relative;
+          min-height:44px;
+        }
+        .sc-day:hover { transform:scale(1.08); z-index:3; }
+
+        .sc-day-num {
+          font-size:15px;
+          font-weight:700;
+          line-height:1;
+        }
+        .sc-day-ico {
+          font-size:11px;
+          line-height:1;
+          animation: sc-pop 0.25s ease forwards;
+        }
+
+        /* ── FUTURE: visible but clearly dimmed ── */
+        .sc-future {
+          background:transparent;
+          border:1px solid transparent;
+        }
+        .sc-future .sc-day-num {
+          color:rgba(156,163,175,0.55);  /* was 0.2 — now much more readable */
+        }
+        .light .sc-future .sc-day-num {
+          color:rgba(107,114,128,0.5);   /* dark enough to see on white */
+        }
+
+        /* ── EMPTY (past, no activity) ── */
+        .sc-empty {
+          background:rgba(255,255,255,0.04);
+          border:1px solid rgba(255,255,255,0.07);
+        }
+        .sc-empty .sc-day-num { color:#9ca3af; }
+        .light .sc-empty {
+          background:rgba(0,0,0,0.04);
+          border-color:rgba(0,0,0,0.1);
+        }
+        .light .sc-empty .sc-day-num { color:#374151; }  /* dark, clearly readable */
+
+        /* ── LOGIN ── */
+        .sc-login {
+          background:rgba(74,222,128,0.1);
+          border:1px solid rgba(74,222,128,0.25);
+        }
+        .sc-login .sc-day-num { color:#4ade80; }
+        .light .sc-login {
+          background:rgba(34,197,94,0.13);
+          border-color:rgba(34,197,94,0.35);
+        }
+        .light .sc-login .sc-day-num { color:#15803d; }
+
+        /* ── BOOKED ── */
+        .sc-booked {
+          background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(245,158,11,0.1));
+          border:1px solid rgba(251,191,36,0.35);
+          box-shadow:0 0 14px rgba(251,191,36,0.1);
+        }
+        .sc-booked .sc-day-num { color:#fbbf24; }
+        .light .sc-booked {
+          background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(245,158,11,0.13));
+          border-color:rgba(217,119,6,0.45);
+        }
+        .light .sc-booked .sc-day-num { color:#92400e; }
+
+        /* today ring */
+        .sc-ring-green { box-shadow:0 0 0 2.5px #4ade80, 0 0 18px rgba(74,222,128,0.25); }
+        .sc-ring-gold  { box-shadow:0 0 0 2.5px #fbbf24, 0 0 20px rgba(251,191,36,0.3); }
+        .light .sc-ring-green { box-shadow:0 0 0 2.5px #16a34a, 0 0 12px rgba(22,163,74,0.2); }
+        .light .sc-ring-gold  { box-shadow:0 0 0 2.5px #d97706, 0 0 14px rgba(217,119,6,0.2); }
+
+        /* ── footer ── */
+        .sc-footer {
+          font-size:11px;
+          text-align:center;
+          color:#6b7280;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          gap:6px;
+        }
+        .light .sc-footer { color:#4b5563; }
       `}</style>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="sc-wrap">
 
         {/* ── Stat Pills ── */}
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="sc-pills">
           {[
             {
-              icon: streak.bookedToday ? '⭐' : streak.loggedInToday ? '🔥' : '💤',
+              icon: streak.bookedToday ? '⭐' : streak.loggedInToday ? '🔥' : '🌙',
               label: 'Current Streak',
-              value: streak.loginStreak,
-              suffix: 'days',
+              value: streak.loginStreak || 0,
               color: streak.bookedToday ? '#fbbf24' : '#4ade80',
             },
             {
               icon: '🏆',
               label: 'Best Streak',
-              value: streak.longestStreak,
-              suffix: 'days',
+              value: streak.longestStreak || 0,
               color: '#a78bfa',
             },
             {
               icon: '📅',
               label: 'Active Days',
               value: streak.activeDays?.length || 0,
-              suffix: 'total',
               color: '#60a5fa',
             },
             {
               icon: '⭐',
               label: 'Booked Days',
               value: streak.bookedDays?.length || 0,
-              suffix: 'total',
               color: '#fbbf24',
             },
           ].map((s, i) => (
-            <div key={i} className="stat-pill">
+            <div key={i} className="sc-pill">
               <span style={{ fontSize: 20 }}>{s.icon}</span>
-              <span style={{
-                fontFamily: 'Bebas Neue, cursive',
-                fontSize: 26,
-                color: s.color,
-                lineHeight: 1,
-              }}>{s.value}</span>
-              <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</span>
+              <span className="sc-pill-val" style={{ color: s.color }}>{s.value}</span>
+              <span className="sc-pill-label">{s.label}</span>
             </div>
           ))}
         </div>
 
-        {/* ── Today banner ── */}
+        {/* ── Today Banner ── */}
         {(streak.loggedInToday || streak.bookedToday) && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '12px 16px',
-            borderRadius: 14,
+          <div className="sc-banner" style={{
             background: streak.bookedToday
-              ? 'linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.06))'
+              ? 'linear-gradient(135deg,rgba(251,191,36,0.1),rgba(245,158,11,0.06))'
               : 'rgba(74,222,128,0.06)',
             border: `1px solid ${streak.bookedToday ? 'rgba(251,191,36,0.25)' : 'rgba(74,222,128,0.15)'}`,
           }}>
-            <span style={{ fontSize: 22 }}>{streak.bookedToday ? '⭐' : '🔥'}</span>
+            <span style={{ fontSize: 24 }}>{streak.bookedToday ? '⭐' : '🔥'}</span>
             <div>
-              <p style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: streak.bookedToday ? '#fbbf24' : '#4ade80',
-              }}>
+              <p className="sc-banner-title" style={{ color: streak.bookedToday ? '#fbbf24' : '#4ade80' }}>
                 {streak.bookedToday
-                  ? 'Ground booked today — Star day! ⭐'
-                  : `${streak.loginStreak} day streak — keep it up! 🔥`}
+                  ? 'Ground booked today — Star day!'
+                  : `${streak.loginStreak} day streak — keep it up!`}
               </p>
-              <p style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+              <p className="sc-banner-sub">
                 {streak.bookedToday
                   ? 'You logged in and booked a ground today'
                   : 'Log in every day to grow your streak'}
@@ -214,77 +336,83 @@ const StreakCalendar = () => {
           </div>
         )}
 
-        {/* ── Month Header ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{
-            fontFamily: 'Bebas Neue, cursive',
-            fontSize: 18,
-            letterSpacing: '0.08em',
-            color: '#f1f5f9',
-          }}>
-            {MONTHS[month].toUpperCase()} {year}
-          </p>
-          {/* Legend */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {[
-              { color: 'rgba(74,222,128,0.3)', label: 'Logged in' },
-              { color: 'rgba(251,191,36,0.4)', label: 'Booked' },
-            ].map((l, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div className="legend-dot" style={{ background: l.color, border: `1px solid ${l.color}` }} />
-                <span style={{ fontSize: 10, color: '#6b7280' }}>{l.label}</span>
+        {/* ── Month Nav ── */}
+        <div>
+          <div className="sc-nav" style={{ marginBottom: 16 }}>
+            <button className="sc-nav-btn" onClick={prevMonth}>
+              <ChevronLeft size={18} />
+            </button>
+
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+              <span className="sc-month-label">{MONTHS[viewMonth]} {viewYear}</span>
+              <div className="sc-legend">
+                {[
+                  { color:'rgba(74,222,128,0.5)', border:'rgba(74,222,128,0.4)', label:'Logged in' },
+                  { color:'rgba(251,191,36,0.5)',  border:'rgba(251,191,36,0.4)',  label:'Booked' },
+                ].map((l, i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:5 }}>
+                    <div className="sc-legend-dot" style={{ background:l.color, border:`1px solid ${l.border}` }} />
+                    <span className="sc-legend-label">{l.label}</span>
+                  </div>
+                ))}
               </div>
+            </div>
+
+            <button className="sc-nav-btn" onClick={nextMonth} disabled={isAtCurrentMonth}>
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* ── Day label row ── */}
+          <div className="sc-grid">
+            {DAYS.map(d => (
+              <div key={d} className="sc-day-label">{d}</div>
             ))}
+
+            {blanks.map((_, i) => <div key={`b${i}`} />)}
+
+            {dayNums.map(day => {
+              const { isBooked, isLogin, isToday, isFuture } = getDayState(day);
+
+              let cls = 'sc-day ';
+              if      (isFuture) cls += 'sc-future';
+              else if (isBooked) cls += 'sc-booked';
+              else if (isLogin)  cls += 'sc-login';
+              else               cls += 'sc-empty';
+
+              if      (isToday && isBooked) cls += ' sc-ring-gold';
+              else if (isToday)             cls += ' sc-ring-green';
+
+              return (
+                <div
+                  key={day}
+                  className={cls}
+                  title={
+                    isBooked ? 'Booked a ground ⭐' :
+                    isLogin  ? 'Logged in 🔥' :
+                    isFuture ? '' : 'No activity'
+                  }
+                >
+                  <span className="sc-day-num">{day}</span>
+                  {isBooked && (
+                    <span className="sc-day-ico" style={{ animation:'sc-pop 0.25s ease forwards' }}>⭐</span>
+                  )}
+                  {isLogin && !isBooked && (
+                    <span className="sc-day-ico" style={{ animation:'sc-pop 0.25s ease forwards' }}>🔥</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* ── Day Labels ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
-          {DAYS.map(d => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 10, color: '#4b5563', fontWeight: 700, paddingBottom: 4, letterSpacing: '0.05em' }}>
-              {d}
-            </div>
-          ))}
-
-          {/* Blank cells */}
-          {blanks.map((_, i) => <div key={`b${i}`} />)}
-
-          {/* Day cells */}
-          {dayNums.map(day => {
-            const { isBooked, isLogin, isToday, isFuture } = getDayState(day);
-
-            let className = 'streak-day ';
-            if (isFuture) className += 'day-future';
-            else if (isBooked) className += 'day-booked';
-            else if (isLogin) className += 'day-login';
-            else className += 'day-empty';
-
-            if (isToday && isBooked) className += ' day-today-booked';
-            else if (isToday) className += ' day-today-base';
-
-            const icon = isBooked ? '⭐' : isLogin ? '🔥' : null;
-
-            return (
-              <div
-                key={day}
-                className={className}
-                title={
-                  isBooked ? 'Booked a ground ⭐' :
-                  isLogin  ? 'Logged in 🔥' :
-                  isFuture ? '' : 'No activity'
-                }
-              >
-                <span style={{ fontSize: icon ? 10 : 13, opacity: isFuture ? 0.3 : 1 }}>{day}</span>
-                {icon && <span className="streak-icon" style={{ fontSize: 10 }}>{icon}</span>}
-              </div>
-            );
-          })}
+        {/* ── Footer ── */}
+        <div className="sc-footer">
+          <span>🔥 = logged in</span>
+          <span style={{ margin:'0 4px', opacity:0.4 }}>·</span>
+          <span>⭐ = booked a ground</span>
         </div>
 
-        {/* ── Footer note ── */}
-        <p style={{ fontSize: 11, color: '#374151', textAlign: 'center' }}>
-          🔥 = logged in that day &nbsp;·&nbsp; ⭐ = booked a ground that day
-        </p>
       </div>
     </>
   );

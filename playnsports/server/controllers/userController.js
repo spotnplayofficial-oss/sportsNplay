@@ -71,6 +71,22 @@ export const getMyStreak = asyncHandler(async (req, res) => {
   if (!user) { res.status(404); throw new Error('User not found'); }
 
   const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  // ── streak-break check ──
+  // If the user's last login wasn't today or yesterday, the streak is
+  // broken (they missed a day). Reset it to 0 so stale values (e.g. from
+  // a session that's been open across multiple days) don't keep showing
+  // an old streak count in the navbar / streak calendar.
+  if (
+    user.loginStreak > 0 &&
+    user.lastLoginDate &&
+    user.lastLoginDate !== today &&
+    user.lastLoginDate !== yesterday
+  ) {
+    user.loginStreak = 0;
+    await user.save();
+  }
 
   res.json({
     loginStreak: user.loginStreak || 0,

@@ -3,6 +3,7 @@ import API from '../api/axios';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import EventApprovals from '../components/admin/EventApprovals.jsx';
 
 const SPORT_EMOJI = {
   football: '⚽', cricket: '🏏', basketball: '🏀', tennis: '🎾',
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'grounds',   label: '🏟️ Grounds' },
   { id: 'social',    label: '✨ Social Approvals' },
   { id: 'coaches',   label: '🎓 Coaches' },
+  { id: 'events',    label: '🏆 Events' },
   { id: 'users',     label: '👥 Users' },
   { id: 'bookings',  label: '📅 Bookings' },
 ];
@@ -265,6 +267,8 @@ const AdminPanel = () => {
               { label: 'Cancelled',        value: stats.cancelledBookings,color: '#f87171', icon: '❌' },
               { label: 'Pending Coaches',  value: stats.pendingCoaches,   color: '#fbbf24', icon: '🎓' },
               { label: 'Total Coaches',    value: stats.totalCoaches,     color: '#a78bfa', icon: '👨‍🏫' },
+              { label: 'Total Events',     value: stats.totalEvents,      color: '#60a5fa', icon: '🏆' },
+              { label: 'Pending Events',   value: stats.pendingEvents,    color: '#f97316', icon: '⏳' },
             ].map((s, i) => (
               <div key={i} className="stat-card">
                 <div className="text-xl mb-1">{s.icon}</div>
@@ -293,6 +297,9 @@ const AdminPanel = () => {
               {t.id === 'coaches' && stats?.pendingCoaches > 0 && (
                 <span className="ml-2 bg-yellow-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingCoaches}</span>
               )}
+              {t.id === 'events' && stats?.pendingEvents > 0 && (
+                <span className="ml-2 bg-orange-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingEvents}</span>
+              )}
             </button>
           ))}
         </div>
@@ -305,6 +312,7 @@ const AdminPanel = () => {
                 { label: 'Ground Approvals',         count: stats?.pendingGrounds,   color: '#f97316', icon: '🏟️', tab: 'grounds', desc: 'grounds awaiting review' },
                 { label: 'Social Booking Approvals', count: stats?.pendingApprovals, color: '#f97316', icon: '✨', tab: 'social',  desc: 'pending approval requests' },
                 { label: 'Coach Applications',       count: stats?.pendingCoaches,   color: '#fbbf24', icon: '🎓', tab: 'coaches', desc: 'waiting for review' },
+                { label: 'Event Approvals',           count: stats?.pendingEvents,    color: '#f97316', icon: '🏆', tab: 'events',  desc: 'events awaiting review' },
               ].map((item, i) => (
                 <button key={i} onClick={() => setActiveTab(item.tab)} className="card text-left hover:border-green-400/20 transition-all group">
                   <div className="flex items-center gap-4">
@@ -508,6 +516,11 @@ const AdminPanel = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* ── EVENTS TAB ── */}
+        {activeTab === 'events' && (
+          <EventApprovals flash={flash} fetchStats={fetchStats} />
         )}
 
         {/* ── USERS ── */}

@@ -19,6 +19,7 @@ import coachRoutes from './routes/coachRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import User from "./models/User.js";
 
@@ -83,6 +84,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/events', eventRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;

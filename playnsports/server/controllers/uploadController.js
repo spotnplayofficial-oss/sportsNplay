@@ -33,4 +33,17 @@ const uploadCertificate = asyncHandler(async (req, res) => {
   });
 });
 
-export { uploadAvatar, uploadCertificate };
+// Event banner image upload — returns the Cloudinary URL
+const uploadEventImage = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('No file uploaded');
+  }
+
+  res.json({
+    message: 'Image uploaded successfully ✅',
+    fileUrl: req.file.path, // Cloudinary URL
+  });
+});
+
+export { uploadAvatar, uploadCertificate, uploadEventImage };

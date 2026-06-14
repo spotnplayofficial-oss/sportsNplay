@@ -4,6 +4,7 @@ import {
   getPendingGrounds, approveGround, rejectGround,
   getPendingSocialBookings, approveSocialBooking, rejectSocialBooking,
   getAllUsers, toggleUserActive, getAllBookings,
+  getEventsForAdmin, approveEvent, rejectEvent,
 } from '../controllers/adminController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -35,5 +36,10 @@ router.patch('/users/:id/toggle-active', ...admin, toggleUserActive);
 
 // Bookings
 router.get('/bookings', ...admin, getAllBookings);
+
+// Events approval
+router.get('/events', ...admin, getEventsForAdmin);
+router.patch('/events/:id/approve', ...admin, approveEvent);
+router.patch('/events/:id/reject', ...admin, rejectEvent);
 
 export default router;

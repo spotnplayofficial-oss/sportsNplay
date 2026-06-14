@@ -3,6 +3,12 @@ import Coach from '../models/Coach.js';
 import User from '../models/User.js';
 import Booking from '../models/Booking.js';
 import Ground from '../models/Ground.js';
+import Event from '../models/Event.js';
+import {
+  getEventsForAdmin,
+  approveEvent,
+  rejectEvent,
+} from './eventController.js';
 
 // ── Coaches ──────────────────────────────────────────────
 
@@ -40,6 +46,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     totalGrounds, socialGrounds, pendingGrounds,
     totalBookings, pendingApprovals, completedBookings, cancelledBookings,
     playerCount, groundOwnerCount,
+    totalEvents, pendingEvents, approvedEvents,
   ] = await Promise.all([
     User.countDocuments(),
     Coach.countDocuments(),
@@ -54,6 +61,9 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     Booking.countDocuments({ status: 'cancelled' }),
     User.countDocuments({ role: 'player' }),
     User.countDocuments({ role: 'ground_owner' }),
+    Event.countDocuments(),
+    Event.countDocuments({ approvalStatus: 'pending' }),
+    Event.countDocuments({ approvalStatus: 'approved' }),
   ]);
 
   res.json({
@@ -61,6 +71,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     totalGrounds, socialGrounds, pendingGrounds,
     totalBookings, pendingApprovals, completedBookings, cancelledBookings,
     playerCount, groundOwnerCount,
+    totalEvents, pendingEvents, approvedEvents,
   });
 });
 
@@ -171,4 +182,5 @@ export {
   getPendingGrounds, approveGround, rejectGround,
   getPendingSocialBookings, approveSocialBooking, rejectSocialBooking,
   getAllUsers, toggleUserActive, getAllBookings,
+  getEventsForAdmin, approveEvent, rejectEvent,
 };

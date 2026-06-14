@@ -16,6 +16,7 @@ import CoachDashboard from './pages/CoachDashboard';
 import CoachesPage from './pages/CoachesPage';
 import CoachProfile from './pages/CoachProfile';
 import AdminPanel from './pages/AdminPanel';
+import EventsPage from './pages/EventsPage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
       <Route path="/groups" element={<ProtectedRoute><GroupPage /></ProtectedRoute>} />
       <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/chat/:conversationId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+      <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
     </Routes>
   );
 }

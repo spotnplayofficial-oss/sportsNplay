@@ -29,7 +29,9 @@ const getMyGrounds = asyncHandler(async (req, res) => {
 
 // Public/player-facing: only approved grounds
 const getNearbyGrounds = asyncHandler(async (req, res) => {
-  const { longitude, latitude, radius = 5000, sport } = req.query;
+  const { longitude, latitude, radius = 5000, sport, name } = req.query;
+
+  const safeRadius = Math.min(Math.abs(parseFloat(radius) || 5000), 100000);
 
   const query = {
     isActive: true,
@@ -41,14 +43,20 @@ const getNearbyGrounds = asyncHandler(async (req, res) => {
           type: 'Point',
           coordinates: [parseFloat(longitude), parseFloat(latitude)],
         },
-        $maxDistance: parseFloat(radius),
+        $maxDistance: safeRadius,
       },
     },
   };
 
   if (sport) query.sport = sport;
 
-  const grounds = await Ground.find(query).populate('owner', 'name phone');
+  let grounds = await Ground.find(query).populate('owner', 'name phone');
+
+  if (name && name.trim()) {
+    const term = name.trim().toLowerCase();
+    grounds = grounds.filter(g => g.name?.toLowerCase().includes(term));
+  }
+
   res.json(grounds);
 });
 
@@ -151,12 +159,18 @@ const deleteGround = asyncHandler(async (req, res) => {
 });
 
 const getAllGrounds = asyncHandler(async (req, res) => {
-  const { sport } = req.query;
+  const { sport, name } = req.query;
 
   const query = { isActive: true, isApproved: true, approvalStatus: 'approved' };
   if (sport) query.sport = sport;
 
-  const grounds = await Ground.find(query).populate('owner', 'name phone');
+  let grounds = await Ground.find(query).populate('owner', 'name phone');
+
+  if (name && name.trim()) {
+    const term = name.trim().toLowerCase();
+    grounds = grounds.filter(g => g.name?.toLowerCase().includes(term));
+  }
+
   res.json(grounds);
 });
 

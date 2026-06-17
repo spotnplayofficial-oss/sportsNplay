@@ -32,7 +32,10 @@ const setAvailability = asyncHandler(async (req, res) => {
 });
 
 const getNearbyPlayers = asyncHandler(async (req, res) => {
-  const { longitude, latitude, radius = 5000, sport, skillLevel } = req.query;
+  const { longitude, latitude, radius = 5000, sport, skillLevel, name } = req.query;
+
+  // Hard-cap radius at 100 km (100,000 m) to prevent abuse / huge DB scans
+  const safeRadius = Math.min(Math.abs(parseFloat(radius) || 5000), 100000);
 
   const query = {
     isAvailable: true,
@@ -42,7 +45,7 @@ const getNearbyPlayers = asyncHandler(async (req, res) => {
           type: 'Point',
           coordinates: [parseFloat(longitude), parseFloat(latitude)],
         },
-        $maxDistance: parseFloat(radius),
+        $maxDistance: safeRadius,
       },
     },
   };
@@ -50,18 +53,31 @@ const getNearbyPlayers = asyncHandler(async (req, res) => {
   if (sport) query.sport = sport;
   if (skillLevel) query.skillLevel = skillLevel;
 
-  const players = await Player.find(query).populate('user', 'name phone avatar');
+  let players = await Player.find(query).populate('user', 'name phone avatar gender');
+
+  // Client-side name filter after geo-query (case-insensitive substring)
+  if (name && name.trim()) {
+    const term = name.trim().toLowerCase();
+    players = players.filter(p => p.user?.name?.toLowerCase().includes(term));
+  }
+
   res.json(players);
 });
 
 const getAllPlayers = asyncHandler(async (req, res) => {
-  const { sport, skillLevel } = req.query;
+  const { sport, skillLevel, name } = req.query;
 
   const query = { isAvailable: true };
   if (sport) query.sport = sport;
   if (skillLevel) query.skillLevel = skillLevel;
 
-  const players = await Player.find(query).populate('user', 'name phone avatar gender');
+  let players = await Player.find(query).populate('user', 'name phone avatar gender');
+
+  if (name && name.trim()) {
+    const term = name.trim().toLowerCase();
+    players = players.filter(p => p.user?.name?.toLowerCase().includes(term));
+  }
+
   res.json(players);
 });
 

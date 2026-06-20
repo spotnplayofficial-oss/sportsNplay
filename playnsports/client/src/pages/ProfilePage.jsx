@@ -326,6 +326,7 @@ const ProfilePage = () => {
   const [newAchievement, setNewAchievement] = useState('');
   const [instagram, setInstagram] = useState('');
   const [twitter, setTwitter] = useState('');
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
   /* ── add sport form ── */
   const [addSportForm, setAddSportForm] = useState({ name: 'cricket', level: 'beginner' });
@@ -341,6 +342,7 @@ const ProfilePage = () => {
   const [certFile, setCertFile] = useState(null);
   const [certLoading, setCertLoading] = useState(false);
   const certInputRef = useRef();
+  const avatarMenuRef = useRef();
 
   /* ─────────────────────────────────────────────
      Load data
@@ -349,6 +351,14 @@ const ProfilePage = () => {
     if (role === 'player') fetchPlayerProfile();
     if (role === 'coach')  fetchCoachProfile();
   }, [role]);
+
+    useEffect(() => {
+    const handler = (e) => {
+      if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target)) setAvatarMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const fetchPlayerProfile = async () => {
     try {
@@ -457,6 +467,18 @@ const ProfilePage = () => {
       setAvatarFile(null);
       flash('Avatar updated ✅');
     } catch { flash('Upload failed', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const handleAvatarRemove = async () => {
+    setLoading(true);
+    try {
+      await API.delete('/upload/avatar');
+      updateUser({ avatar: '' });
+      setAvatarPrev(null);
+      setAvatarFile(null);
+      flash('Avatar removed ✅');
+    } catch { flash('Failed to remove', 'error'); }
     finally { setLoading(false); }
   };
 
@@ -793,7 +815,7 @@ const ProfilePage = () => {
             <div className="anim-1 card text-center relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-green-400/8 rounded-full blur-[60px] pointer-events-none" />
 
-              <div className="relative inline-block mb-4">
+            <div className="relative inline-block mb-4">
                 <div className="relative w-28 h-28 mx-auto">
                   <div className="absolute inset-0 rounded-full animate-spin-slow opacity-50"
                     style={{ background: 'conic-gradient(from 0deg, transparent, #4ade80 50%, transparent)', borderRadius: '50%' }} />
@@ -805,11 +827,73 @@ const ProfilePage = () => {
                         </div>
                     }
                   </div>
+                  </div>
                 </div>
-                <label htmlFor="avatarInput" className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-400 hover:bg-green-300 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110 shadow-lg">
-                  <span className="text-sm">📷</span>
-                </label>
                 <input id="avatarInput" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+
+              <div className="relative inline-block" ref={avatarMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setAvatarMenuOpen(o => !o)}
+                  className="text-xs px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 mx-auto"
+                  style={{
+                    background: 'rgba(74,222,128,0.1)',
+                    border: '1px solid rgba(74,222,128,0.2)',
+                    color: '#4ade80',
+                  }}
+                >
+                  📷 Photo Options
+                  <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: avatarMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+                </button>
+
+                {avatarMenuOpen && (
+                  <div
+                    style={{
+                      position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+                      zIndex: 50, background: '#0d1117', border: '1px solid rgba(74,222,128,0.2)',
+                      borderRadius: 14, padding: 6, width: 170,
+                      boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                      animation: 'fadeUp 0.15s ease forwards',
+                    }}
+                  >
+                    {avatarPrev && (
+                      
+                      <a  href={avatarPrev}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setAvatarMenuOpen(false)}
+                        className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 transition-colors"
+                        style={{ color: '#d1d5db' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        👁️ View Photo
+                      </a>
+                    )}
+                    <label
+                      htmlFor="avatarInput"
+                      onClick={() => setAvatarMenuOpen(false)}
+                      className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 cursor-pointer transition-colors"
+                      style={{ color: '#4ade80' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(74,222,128,0.08)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      📤 Upload Photo
+                    </label>
+                    {avatarPrev && (
+                      <button
+                        type="button"
+                        onClick={() => { setAvatarMenuOpen(false); handleAvatarRemove(); }}
+                        className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 w-full text-left transition-colors"
+                        style={{ color: '#f87171' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        🗑️ Remove Photo
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <h2 className="font-semibold text-gray-900 dark:text-white text-lg">{user?.name}</h2>

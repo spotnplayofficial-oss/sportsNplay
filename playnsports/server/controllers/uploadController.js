@@ -46,4 +46,18 @@ const uploadEventImage = asyncHandler(async (req, res) => {
   });
 });
 
-export { uploadAvatar, uploadCertificate, uploadEventImage };
+const removeAvatar = asyncHandler(async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { avatar: '' },
+    { new: true }
+  ).select('-password');
+
+  res.json({
+    message: 'Avatar removed ✅',
+    avatar: user.avatar,
+    user,
+  });
+});
+
+export { uploadAvatar, uploadCertificate, uploadEventImage, removeAvatar };

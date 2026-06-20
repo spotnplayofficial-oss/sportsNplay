@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import User from '../models/User.js';
+import { notifyNewMessage } from '../services/notificationService.js';
 
 const onlineUsers = new Map(); // userId -> socketId
 
@@ -24,6 +25,10 @@ const socketHandler = (io) => {
   io.on('connection', (socket) => {
     const userId = socket.user._id.toString();
     onlineUsers.set(userId, socket.id);
+
+    // Personal room — lets notificationService push to this user from
+    // anywhere in the app (any page, not just an open conversation).
+    socket.join(`user_${userId}`);
 
     console.log(`🟢 ${socket.user.name} connected (${socket.id})`);
 
@@ -104,7 +109,7 @@ const socketHandler = (io) => {
         // Emit to all in room
         io.to(conversationId).emit('new_message', populated);
 
-        // Notify participants not in room
+        // Notify participants not in room (ephemeral toast for active sessions)
         for (const participantId of conversation.participants) {
           const pid = participantId.toString();
           if (pid !== userId) {
@@ -116,6 +121,20 @@ const socketHandler = (io) => {
                 senderName: socket.user.name,
               });
             }
+          }
+        }
+
+        // Persist a notification (bell/inbox) for every other participant
+        for (const participantId of conversation.participants) {
+          const pid = participantId.toString();
+          if (pid !== userId) {
+            notifyNewMessage({
+              conversationId,
+              recipientId: pid,
+              senderId: userId,
+              senderName: socket.user.name,
+              preview: text,
+            });
           }
         }
       } catch (err) {

@@ -23,7 +23,9 @@ import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
+import { setIO } from './socket/io.js';
 
 dotenv.config();
 connectDB();
@@ -132,6 +134,7 @@ const io = new Server(httpServer, {
   transports: ['websocket', 'polling'],
 });
 
+setIO(io); // let controllers/services emit real-time notifications via getIO()
 socketHandler(io);
 
 // ── Health checks ─────────────────────────────────────────────────
@@ -153,6 +156,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ── Error handler ─────────────────────────────────────────────────
 app.use(errorHandler);

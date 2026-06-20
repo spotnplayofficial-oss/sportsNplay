@@ -1,12 +1,15 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useNotifications } from '../context/NotificationContext';
 import { useEffect, useState } from 'react';
 import API from '../api/axios';
+import ProfileDropdown from './ProfileDropdown';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
@@ -104,7 +107,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* ── RIGHT: Theme + Streak + Profile + Logout (desktop only) ── */}
+          {/* ── RIGHT: Theme + Streak + Profile (desktop only) ── */}
           <div className="hidden md:flex items-center gap-3 flex-shrink-0">
 
             {/* Theme toggle */}
@@ -141,32 +144,7 @@ const Navbar = () => {
 
             {/* Profile / Auth */}
             {user ? (
-              <>
-                <Link to="/profile" className="flex items-center gap-3 group">
-                  <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 hover:border-green-500/30 rounded-2xl px-3 py-2 transition-all duration-200">
-                    {user?.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt="avatar"
-                        className="w-7 h-7 rounded-full object-cover border border-green-400/50 avatar-glow transition-all duration-200"
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center text-xs text-green-400 font-bold">
-                        {user.name?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                      {user.name}
-                    </span>
-                  </div>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-gray-500 hover:text-red-400 border border-black/10 dark:border-white/10 hover:border-red-500/30 px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer"
-                >
-                  Logout
-                </button>
-              </>
+              <ProfileDropdown />
             ) : (
               <>
                 <Link to="/login" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
@@ -179,13 +157,16 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* ── Hamburger (mobile) ── */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className={`md:hidden hamburger ${menuOpen ? 'open' : ''} flex flex-col gap-[5px] p-2 text-gray-800 dark:text-gray-200`}
-          >
-            <span /><span /><span />
-          </button>
+          {/* ── Profile + Hamburger (mobile) ── */}
+          <div className="md:hidden flex items-center gap-2">
+            {user && <ProfileDropdown compact />}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className={`hamburger ${menuOpen ? 'open' : ''} flex flex-col gap-[5px] p-2 text-gray-800 dark:text-gray-200`}
+            >
+              <span /><span /><span />
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -215,6 +196,14 @@ const Navbar = () => {
                   {user.role === 'admin'        && <Link to="/admin"            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-green-400 hover:text-green-300 transition-all"><span>🛡️</span> Admin Panel</Link>}
 
                   <Link to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all"><span>👤</span> Profile</Link>
+                  <Link to="/notifications" className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all">
+                    <span className="flex items-center gap-3"><span>🔔</span> Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-green-400 text-black text-[11px] font-bold flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
 
                   <div className="h-px bg-black/5 dark:bg-white/5 my-2" />
                   <button

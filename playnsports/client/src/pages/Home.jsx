@@ -739,18 +739,9 @@ const Home = () => {
         {/* Footer */}
         <footer className="border-t border-black/5 dark:border-white/5 py-10 px-4 mx-auto">
           <div className="max-w-6xl mx-auto flex items-center justify-center gap-6">
-            {/* <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-400 rounded-lg flex items-center justify-center">
-                <span className="text-black text-sm font-black">S</span>
-              </div>
-              <span className="font-bebas text-xl tracking-widest text-gray-900 dark:text-white">PLAYNSPORTS</span>
-            </div> */}
-            <p className="text-gray-700 text-sm">© 2026 PLAYNSPORTS — Built for players, by players.</p>
-            {/* <div className="flex gap-6 text-sm text-gray-600">
-              <Link to="/login" className="hover:text-gray-900 dark:text-white transition-colors">Login</Link>
-              <Link to="/register" className="hover:text-gray-900 dark:text-white transition-colors">Register</Link>
-              <Link to="/map" className="hover:text-gray-900 dark:text-white transition-colors">Map</Link>
-            </div> */}
+        
+            <p className="text-gray-700 text-sm">© 2026 SPOTNPLAY — Built for players, by players.</p>
+            
           </div>
         </footer>
       </div>
